@@ -1,0 +1,36 @@
+[project]
+name = "congrats-you-have-a-dag"
+version = "0.1.0"
+description = "Demo: Why causal structure alone is insufficient - PyMC bridges the gap"
+authors = ["PyMC Labs"]
+channels = ["conda-forge"]
+platforms = ["win-64", "linux-64", "osx-64", "osx-arm64"]
+
+[tasks]
+lab = "jupyter lab"
+notebook = "jupyter lab notebooks/demo.ipynb"
+test = "pytest tests/ -v"
+lint = "pre-commit run --all-files"
+
+[dependencies]
+python = ">=3.11,<3.13"
+pymc = ">=5.10"
+arviz = ">=0.17"
+numpy = ">=1.26"
+pandas = ">=2.1"
+matplotlib = ">=3.8"
+seaborn = ">=0.13"
+jupyterlab = ">=4.0"
+ipykernel = ">=6.28"
+scipy = ">=1.12"
+xarray = ">=2024.1"
+
+[feature.dev.dependencies]
+pytest = ">=8.0"
+pre-commit = ">=3.6"
+ruff = ">=0.2"
+mypy = ">=1.8"
+
+[environments]
+default = { features = [], solve-group = "default" }
+dev = { features = ["dev"], solve-group = "default" }
