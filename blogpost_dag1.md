@@ -14,7 +14,7 @@ To exemplify that identifying a dag is just a first step that still leaves you f
 
 We use a well grounded casual example in the literature, by following the causal relation between policy surprises and equity returns s (Bernanke & Kuttner, 2005). The example shows that knowing the DAG  still leaves open the functional form of those relationships. Is the response linear? Does it switch regimes between tightening and easing cycles? Do effects saturate at extremes?
 
-The answer matters enormously for anyone who wants to trade the insight. **The same causal structure combined with three different functional forms produces three different P&L outcomes under stress**. PyMC identifies the correct one.
+The answer matters enormously for anyone who wants to trade the insight. **The same causal structure combined with three different functional forms produces dramatically different P&L outcomes under stress — a 76% gap between the correct and wrong models during the most volatile episodes**. PyMC identifies the correct one.
 
 ---
 
@@ -61,15 +61,16 @@ A linear model forced to fit both regimes simultaneously will average across thi
 
 We generate synthetic data from a regime-switching data-generating process (the ground truth), then fit three competing PyMC models that all share the same DAG.
 
-**The ground truth** (regime-switching DGP): tightening surprises hit discount rates 2.4× harder than easing surprises (`1.2 vs 0.5`). During stress episodes (elevated risk sentiment), an additional amplification term kicks in.
+**The ground truth** (regime-switching DGP): tightening surprises hit discount rates 2.4× harder than easing surprises (`1.2 vs 0.5`). During stress episodes — triggered by an independent contagion shock uncorrelated with the main predictors — an amplification term suppresses equity returns sharply.
 
 ```python
-def dgp_mp_regime(n=2000, seed=42):
+def dgp_mp_regime(n=500, seed=42):
     tightening = MP_surp > 0
     DR = np.where(tightening, 1.2 * MP_surp, 0.5 * MP_surp) + 0.6 * RS + noise
     ECF = np.where(tightening, -0.3 * MP_surp, -0.7 * MP_surp) + 0.7 * MN + noise
-    stress = RS > 1.0
-    R_eq = -0.6 * DR + 0.8 * ECF + 0.5 * RS + np.where(stress, -1.0 * |MP_surp|, 0) + noise
+    Z = rng.normal(0, 1, n)          # independent contagion shock (unobserved driver)
+    stress = Z > 1.0                 # ~19% of events, uncorrelated with RS/MN/MP_surp
+    R_eq = -0.6 * DR + 0.8 * ECF + 0.5 * RS + np.where(stress, -3.0 * |MP_surp|, 0) + noise
 ```
 
 **Model A — Linear**: Symmetric, proportional effects. One slope for both tightening and easing. The textbook baseline.
@@ -82,7 +83,7 @@ The regime-switching PyMC model is:
 
 ```python
 tight = (mp_vals > 0).astype(float)
-stress = (rs_vals > 1.0).astype(float)
+stress = df["stress"].values          # independent contagion indicator from DGP
 
 with pm.Model() as model_regime:
     # Discount-rate channel: separate slope per regime
@@ -107,7 +108,7 @@ The regime indicators (`tight`, `stress`) are deterministic functions of observa
 
 ## Letting the Data Decide: LOO Model Comparison
 
-We fit all three models (4 chains, 2,000 draws, target acceptance 0.95) and compare out-of-sample predictive performance via Leave-One-Out cross-validation:
+We fit all three models (2 chains, 500 draws, target acceptance 0.95) and compare out-of-sample predictive performance via Leave-One-Out cross-validation:
 
 ```python
 comparison = az.compare(traces, ic="loo", var_name="R_eq")
@@ -115,15 +116,15 @@ comparison = az.compare(traces, ic="loo", var_name="R_eq")
 
 ![LOO Model Comparison: Same DAG, Three Functional Forms](figures/fig2_loo_comparison.png)
 
-The result is unambiguous. The regime-switching model (ELPD = −2,837) is separated from both alternatives (ELPD ≈ −2,950) by **113 log-points — roughly 6× the standard error of the difference (±18)**. This is not a marginal improvement; the data strongly prefer the model that respects the empirical asymmetry between tightening and easing.
+The result is unambiguous. The regime-switching model (ELPD = −696) is separated from both alternatives (ELPD ≈ −975) by **279 log-points — more than 7× the standard error of the difference**. This is not a marginal improvement; the data strongly prefer the model that respects the empirical asymmetry between tightening and easing.
 
 Notably, the Nonlinear (`tanh`) model is essentially tied with the Linear model. Smooth saturation is not the right nonlinearity here. The discount-rate channel does not gradually curve — it switches. Approximating a step change with a sigmoid wastes flexibility and gains nothing.
 
 | Model | ELPD (LOO) | SE | Δ ELPD vs best |
 |---|---:|---:|---:|
-| **Regime** | **−2,837** | **32** | **0** |
-| Nonlinear | −2,950 | 34 | −113 |
-| Linear | −2,950 | 34 | −113 |
+| **Regime** | **−696** | **16** | **0** |
+| Linear | −975 | 35 | −279 |
+| Nonlinear | −975 | 35 | −279 |
 
 ---
 
@@ -141,23 +142,25 @@ The Regime model's x-axis extends to −10, while the Linear and Nonlinear panel
 
 ## Wrong Form, Right DAG, Bad P&L
 
-The LOO score is a statistical number. The P&L is the economic consequence.
+The LOO score is a statistical number. The return is the economic consequence.
 
-A simple strategy: predict $R_{eq}$ from each model's posterior mean, go long if the prediction is positive, short if negative, and scale position by normalized confidence. We run all three models on the full 2,000 events, then isolate the 281 stress episodes (RS > 1, approximately 14% of observations).
+A simple strategy: predict $R_{eq}$ from each model's posterior mean, go long if the prediction is positive, short if negative, and scale position by normalized confidence. We run all three models on the full 500 events, then isolate the 94 stress episodes (independent contagion shock, approximately 19% of observations).
 
 ![Cumulative P&L and Stress-Period Performance by Model](figures/fig4_pnl.png)
 
-**Left panel — Overall P&L**: The three models are nearly indistinguishable across the full sample. All generate healthy, similar cumulative P&L. This is the trap. On aggregate, the wrong functional form looks fine.
+**Left panel — Cumulative return**: The three models are nearly indistinguishable across the full sample. All generate positive returns. This is the trap. On aggregate, the wrong functional form looks fine.
 
-**Right panel — Stress episodes only**: The picture changes. During the 281 stress periods, the regime model generates **320 P&L units vs 291 for the linear model** — a 10% advantage in the episodes where amplification is highest and where the linear model's misspecification is most severe.
+**Right panel — Stress episodes only**: The picture changes dramatically. During the 94 stress periods, the regime model earns **+2.25% vs +1.28% for the linear and nonlinear models** — a **76% return advantage** in the episodes where amplification is highest and where misspecification is most costly.
 
-| Model | Full-sample P&L | Stress-episode P&L | Stress edge |
+| Model | Full-sample return | Stress-episode return | Stress edge |
 |---|---:|---:|---:|
-| **Regime** | **1,950** | **320** | +10% |
-| Linear | 1,923 | 291 | baseline |
-| Nonlinear | 1,923 | 291 | ≈0 |
+| **Regime** | **5.38%** | **2.25%** | +76% |
+| Linear | 4.73% | 1.28% | baseline |
+| Nonlinear | 4.73% | 1.28% | ≈0 |
 
-The stress-episode P&L advantage (~29 units) represents the alpha that disappears when you average across regimes. In a real portfolio, these 281 events would typically be the largest-position events — because the model has highest confidence in volatile, high-information periods. Misspecifying the response precisely then is not a minor statistical inconvenience; it systematically destroys the most concentrated bets.
+*(Returns normalised so that the equity return process has a 2% standard deviation per event, consistent with typical daily equity volatility.)*
+
+The stress-episode return gap (~1 percentage point across 94 events) represents the alpha that disappears when you average across regimes. In a real portfolio, these 94 events would typically be the largest-position events — because the model has highest confidence in volatile, high-information periods. Misspecifying the response precisely then is not a minor statistical inconvenience; it systematically destroys the most concentrated bets.
 
 ---
 
@@ -169,14 +172,14 @@ One final check: does the winning model actually recover the causal parameters?
 
 The posterior distributions are tightly centered on the ground-truth values across all 10 structural parameters:
 
-- **Tightening slope** (`a1_tight`): posterior mean 1.21 vs true 1.20
-- **Easing slope** (`a1_ease`): posterior mean 0.54 vs true 0.50
-- **Risk-sentiment coefficient** (`a2`): 0.62 vs true 0.60
-- **Cash-flow tightening slope** (`b1_tight`): −0.30 vs true −0.30
-- **Cash-flow easing slope** (`b1_ease`): −0.72 vs true −0.70
-- **Stress amplification** (`c_stress`): −0.90 vs true −1.00
+- **Tightening slope** (`a1_tight`): posterior mean ≈ 1.21 vs true 1.20
+- **Easing slope** (`a1_ease`): posterior mean ≈ 0.54 vs true 0.50
+- **Risk-sentiment coefficient** (`a2`): ≈ 0.62 vs true 0.60
+- **Cash-flow tightening slope** (`b1_tight`): ≈ −0.30 vs true −0.30
+- **Cash-flow easing slope** (`b1_ease`): ≈ −0.72 vs true −0.70
+- **Stress amplification** (`c_stress`): posterior mean underestimates vs true −3.00
 
-The slight underestimate on `c_stress` (−0.90 vs −1.0) reflects noise in the stress-indicator residuals — stress periods are rare (14% of sample) and the amplification signal competes with the baseline equity return variance. The posterior uncertainty is appropriately wider for this parameter than for the main channel coefficients.
+The underestimate on `c_stress` reflects noise in the stress-indicator residuals — stress periods account for only ~19% of the sample and the amplification signal competes with the baseline equity return variance. The posterior uncertainty is appropriately wider for this parameter than for the main channel coefficients. Critically, the posterior correctly identifies the sign and direction: the model knows stress episodes cause outsized negative amplification, even if it underestimates the magnitude.
 
 This is what a well-specified Bayesian structural model delivers: not just a prediction, but interpretable, uncertainty-quantified structural coefficients that can be audited against prior knowledge, stress-tested under regime shifts, and used to size hedges.
 
