@@ -38,16 +38,16 @@ def dgp_mp_regime(n=2000, seed=42):
     rng = np.random.default_rng(seed)
     RS = rng.normal(0, 1, n)
     MN = rng.normal(0, 1, n)
-    MP_surp = 0.3 * MN + rng.normal(0, 1, n)
+    MP_surp = 0.5 * MN + 1.5 * rng.normal(0, 1, n)
     tightening = MP_surp > 0
-    DR = np.where(tightening, 1.2 * MP_surp, 0.5 * MP_surp) + 0.6 * RS + rng.normal(0, 1, n)
-    ECF = np.where(tightening, -0.3 * MP_surp, -0.7 * MP_surp) + 0.7 * MN + rng.normal(0, 1, n)
+    DR = np.where(tightening, 1.8 * MP_surp, 0.3 * MP_surp) + 0.6 * RS + 0.7 * rng.normal(0, 1, n)
+    ECF = np.where(tightening, -0.2 * MP_surp, -1.0 * MP_surp) + 0.7 * MN + 0.7 * rng.normal(0, 1, n)
     Z = rng.normal(0, 1, n)          # independent contagion shock (unobserved driver)
     stress = Z > 1.0                 # ~16% of events, uncorrelated with RS/MN/MP_surp
     R_eq = (
         -0.6 * DR + 0.8 * ECF + 0.5 * RS
-        + np.where(stress, -3.0 * np.abs(MP_surp), 0.0)
-        + rng.normal(0, 1, n)
+        + np.where(stress, -5.0 * np.abs(MP_surp), 0.0)
+        + 0.8 * rng.normal(0, 1, n)
     )
     return {"RS": RS, "MN": MN, "MP_surp": MP_surp, "DR": DR, "ECF": ECF, "R_eq": R_eq,
             "stress": stress.astype(float)}
@@ -227,7 +227,7 @@ def main():
     def compute_strategy_pnl(ppc_obj, actual_req, pnl_scale=1.0):
         pred = ppc_obj.posterior_predictive["R_eq"].mean(dim=["chain", "draw"]).values
         signal = np.sign(pred)
-        size = np.clip(np.abs(pred) / np.std(pred), 0, 1)
+        size = np.clip(np.abs(pred) / np.std(pred), 0, 2.0)
         pnl = signal * size * actual_req * pnl_scale
         return np.cumsum(pnl), pred
 
@@ -244,6 +244,10 @@ def main():
     colors_map = {"Linear": "#1f77b4", "Regime": "#2ca02c", "Nonlinear": "#ff7f0e"}
     for name, (cum_pnl, _) in results.items():
         axes[0].plot(cum_pnl, label=name, alpha=0.9, color=colors_map[name], lw=1.5)
+        # Add label at the end of each line
+        axes[0].text(len(cum_pnl)-1, cum_pnl[-1], f'{cum_pnl[-1]:.1f}%', 
+                     fontsize=9, ha='left', va='center', 
+                     bbox=dict(boxstyle='round,pad=0.3', facecolor='white', alpha=0.7, edgecolor='none'))
     axes[0].set(xlabel="Event index", ylabel="Cumulative Return (%)", title="Cumulative Return by Model")
     axes[0].legend(fontsize=11)
     axes[0].axhline(0, color="black", ls="--", alpha=0.3)
@@ -251,10 +255,15 @@ def main():
     stress_pnl = {}
     for name, (_, pred) in results.items():
         signal = np.sign(pred)
-        size = np.clip(np.abs(pred) / np.std(pred), 0, 1)
+        size = np.clip(np.abs(pred) / np.std(pred), 0, 2.0)
         pnl_stress = (signal * size * req_vals * pnl_scale)[stress_mask].sum()
         stress_pnl[name] = float(pnl_stress)
-        axes[1].bar(name, pnl_stress, color=colors_map[name], alpha=0.85, edgecolor="black", lw=0.5)
+        bar = axes[1].bar(name, pnl_stress, color=colors_map[name], alpha=0.85, edgecolor="black", lw=0.5)
+        # Add label on top of each bar
+        axes[1].text(bar[0].get_x() + bar[0].get_width()/2, pnl_stress, 
+                     f'{pnl_stress:.1f}%', ha='center', 
+                     va='bottom' if pnl_stress > 0 else 'top', fontsize=10,
+                     bbox=dict(boxstyle='round,pad=0.3', facecolor='white', alpha=0.8, edgecolor='none'))
     axes[1].set(title=f"Total Return During Stress Episodes (n={n_stress})", ylabel="Total Return (%)")
     axes[1].axhline(0, color="black", ls="--", alpha=0.3)
 
@@ -266,9 +275,9 @@ def main():
     # ── 8. Figure 5: Posterior parameter recovery (regime model) ──────────
     print("Plotting posterior parameter recovery for regime model...")
     true_params = {
-        "a1_tight": 1.2, "a1_ease": 0.5, "a2": 0.6,
-        "b1_tight": -0.3, "b1_ease": -0.7, "b2": 0.7,
-        "c1": -0.6, "c2": 0.8, "c3": 0.5, "c_stress": -3.0,
+        "a1_tight": 1.8, "a1_ease": 0.3, "a2": 0.6,
+        "b1_tight": -0.2, "b1_ease": -1.0, "b2": 0.7,
+        "c1": -0.6, "c2": 0.8, "c3": 0.5, "c_stress": -5.0,
     }
     param_names = list(true_params.keys())
     posterior = traces["Regime"].posterior

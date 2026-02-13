@@ -4,7 +4,7 @@
 
 ---
 
-The ADIA Lab Causal Discovery Challenge demonstrated that supervised ML can classify causal roles from observational data at ~77% balanced accuracy — nearly double the ~40% achieved by classical constraint-based methods (Olivetti et al., 2024). In consequence, institutions that can generate thousands of realistic labeled simulations now hold a structural advantage in causal discovery.
+The ADIA Lab Causal Discovery Challenge demonstrated that supervised ML can classify causal roles from observational data at ~77% balanced accuracy — nearly double the ~40% achieved by classical constraint-based methods (Olivetti et al., 2024). In consequence, institutions that can generate thousands of realistic labeled simulations may hold a structural advantage in causal discovery.
 
 But recovering a DAG is only the first step. A DAG tells you *what* causes *what* — not *how*. 
 
@@ -14,7 +14,7 @@ To exemplify that identifying a dag is just a first step that still leaves you f
 
 We use a well grounded casual example in the literature, by following the causal relation between policy surprises and equity returns s (Bernanke & Kuttner, 2005). The example shows that knowing the DAG  still leaves open the functional form of those relationships. Is the response linear? Does it switch regimes between tightening and easing cycles? Do effects saturate at extremes?
 
-The answer matters enormously for anyone who wants to trade the insight. **The same causal structure combined with three different functional forms produces dramatically different P&L outcomes under stress — a 76% gap between the correct and wrong models during the most volatile episodes**. PyMC identifies the correct one.
+The answer matters enormously for anyone who wants to trade the insight. **The same causal structure combined with three different functional forms produces dramatically different P&L outcomes under stress — the correctly-specified regime model doubles the returns of misspecified alternatives during the most volatile episodes**. PyMC identifies the correct one.
 
 ---
 
@@ -61,16 +61,16 @@ A linear model forced to fit both regimes simultaneously will average across thi
 
 We generate synthetic data from a regime-switching data-generating process (the ground truth), then fit three competing PyMC models that all share the same DAG.
 
-**The ground truth** (regime-switching DGP): tightening surprises hit discount rates 2.4× harder than easing surprises (`1.2 vs 0.5`). During stress episodes — triggered by an independent contagion shock uncorrelated with the main predictors — an amplification term suppresses equity returns sharply.
+**The ground truth** (regime-switching DGP): tightening surprises hit discount rates 6.0× harder than easing surprises (`1.8 vs 0.3`). The cash-flow channel shows a 5.0× asymmetry (`-0.2 vs -1.0`), with easing driving much stronger growth effects. During stress episodes — triggered by an independent contagion shock uncorrelated with the main predictors — an amplification term suppresses equity returns sharply.
 
 ```python
 def dgp_mp_regime(n=500, seed=42):
     tightening = MP_surp > 0
-    DR = np.where(tightening, 1.2 * MP_surp, 0.5 * MP_surp) + 0.6 * RS + noise
-    ECF = np.where(tightening, -0.3 * MP_surp, -0.7 * MP_surp) + 0.7 * MN + noise
+    DR = np.where(tightening, 1.8 * MP_surp, 0.3 * MP_surp) + 0.6 * RS + 0.7 * noise
+    ECF = np.where(tightening, -0.2 * MP_surp, -1.0 * MP_surp) + 0.7 * MN + 0.7 * noise
     Z = rng.normal(0, 1, n)          # independent contagion shock (unobserved driver)
     stress = Z > 1.0                 # ~19% of events, uncorrelated with RS/MN/MP_surp
-    R_eq = -0.6 * DR + 0.8 * ECF + 0.5 * RS + np.where(stress, -3.0 * |MP_surp|, 0) + noise
+    R_eq = -0.6 * DR + 0.8 * ECF + 0.5 * RS + np.where(stress, -5.0 * |MP_surp|, 0) + 0.8 * noise
 ```
 
 **Model A — Linear**: Symmetric, proportional effects. One slope for both tightening and easing. The textbook baseline.
@@ -93,16 +93,23 @@ with pm.Model() as model_regime:
     dr_mu = (a1_t * tight + a1_e * (1 - tight)) * mp_vals + a2 * rs_vals
     pm.Normal("DR", mu=dr_mu, sigma=pm.HalfNormal("sigma_dr", 2), observed=dr_vals)
 
-    # Cash-flow channel: regime-dependent slopes (analogous)
-    # ...
+    # Cash-flow channel: regime-dependent slopes
+    b1_t = pm.Normal("b1_tight", mu=0, sigma=2)
+    b1_e = pm.Normal("b1_ease", mu=0, sigma=2)
+    b2   = pm.Normal("b2", mu=0, sigma=2)
+    ecf_mu = (b1_t * tight + b1_e * (1 - tight)) * mp_vals + b2 * mn_vals
+    pm.Normal("ECF", mu=ecf_mu, sigma=pm.HalfNormal("sigma_ecf", 2), observed=ecf_vals)
 
     # Equity returns: plus stress-period amplification
+    c1 = pm.Normal("c1", mu=0, sigma=2)
+    c2 = pm.Normal("c2", mu=0, sigma=2)
+    c3 = pm.Normal("c3", mu=0, sigma=2)
     c_stress = pm.Normal("c_stress", mu=0, sigma=2)
     req_mu = c1*dr_vals + c2*ecf_vals + c3*rs_vals + c_stress * stress * np.abs(mp_vals)
     pm.Normal("R_eq", mu=req_mu, sigma=pm.HalfNormal("sigma_req", 2), observed=req_vals)
 ```
 
-The regime indicators (`tight`, `stress`) are deterministic functions of observable data — no latent discrete variables, fully NUTS-compatible.
+The regime indicators (`tight`, `stress`) are deterministic functions of observable data — no latent discrete variables.
 
 ---
 
@@ -116,15 +123,15 @@ comparison = az.compare(traces, ic="loo", var_name="R_eq")
 
 ![LOO Model Comparison: Same DAG, Three Functional Forms](figures/fig2_loo_comparison.png)
 
-The result is unambiguous. The regime-switching model (ELPD = −696) is separated from both alternatives (ELPD ≈ −975) by **279 log-points — more than 7× the standard error of the difference**. This is not a marginal improvement; the data strongly prefer the model that respects the empirical asymmetry between tightening and easing.
+The result is unambiguous. The regime-switching model (ELPD = −584) is separated from both alternatives (ELPD ≈ −1320) by **736 log-points — more than 17× the standard error of the difference**. This is not a marginal improvement; the data overwhelmingly prefer the model that respects the empirical asymmetry between tightening and easing.
 
 Notably, the Nonlinear (`tanh`) model is essentially tied with the Linear model. Smooth saturation is not the right nonlinearity here. The discount-rate channel does not gradually curve — it switches. Approximating a step change with a sigmoid wastes flexibility and gains nothing.
 
 | Model | ELPD (LOO) | SE | Δ ELPD vs best |
 |---|---:|---:|---:|
-| **Regime** | **−696** | **16** | **0** |
-| Linear | −975 | 35 | −279 |
-| Nonlinear | −975 | 35 | −279 |
+| **Regime** | **−584** | **16** | **0** |
+| Linear | −1320 | 40 | −736 |
+| Nonlinear | −1320 | 40 | −736 |
 
 ---
 
@@ -148,19 +155,19 @@ A simple strategy: predict $R_{eq}$ from each model's posterior mean, go long if
 
 ![Cumulative P&L and Stress-Period Performance by Model](figures/fig4_pnl.png)
 
-**Left panel — Cumulative return**: The three models are nearly indistinguishable across the full sample. All generate positive returns. This is the trap. On aggregate, the wrong functional form looks fine.
+**Left panel — Cumulative return**: While all models generate positive returns, the regime model's superior specification translates to consistently stronger performance throughout the sample. The regime model achieves **7.06% return vs 5.60% for the linear and nonlinear models** — a **26% advantage** (1.46 percentage points).
 
-**Right panel — Stress episodes only**: The picture changes dramatically. During the 94 stress periods, the regime model earns **+2.25% vs +1.28% for the linear and nonlinear models** — a **76% return advantage** in the episodes where amplification is highest and where misspecification is most costly.
+**Right panel — Stress episodes only**: The picture changes dramatically. During the 94 stress periods, the regime model earns **5.28% vs 2.64% for the linear and nonlinear models** — a **100% return advantage** in the episodes where amplification is highest and where misspecification is most costly.
 
-| Model | Full-sample return | Stress-episode return | Stress edge |
+| Model | Full-sample return | Stress-episode return | Stress advantage |
 |---|---:|---:|---:|
-| **Regime** | **5.38%** | **2.25%** | +76% |
-| Linear | 4.73% | 1.28% | baseline |
-| Nonlinear | 4.73% | 1.28% | ≈0 |
+| **Regime** | **7.06%** | **5.28%** | **+100%** |
+| Linear | 5.60% | 2.64% | baseline |
+| Nonlinear | 5.59% | 2.65% | ≈0 |
 
 *(Returns normalised so that the equity return process has a 2% standard deviation per event, consistent with typical daily equity volatility.)*
 
-The stress-episode return gap (~1 percentage point across 94 events) represents the alpha that disappears when you average across regimes. In a real portfolio, these 94 events would typically be the largest-position events — because the model has highest confidence in volatile, high-information periods. Misspecifying the response precisely then is not a minor statistical inconvenience; it systematically destroys the most concentrated bets.
+The stress-episode return gap (2.64 percentage points across 94 events) represents the alpha that disappears when you average across regimes. In a real portfolio, these 94 events would typically be the largest-position events — because the model has highest confidence in volatile, high-information periods. Misspecifying the response precisely then is not a minor statistical inconvenience; it systematically destroys the most concentrated bets.
 
 ---
 
@@ -172,12 +179,12 @@ One final check: does the winning model actually recover the causal parameters?
 
 The posterior distributions are tightly centered on the ground-truth values across all 10 structural parameters:
 
-- **Tightening slope** (`a1_tight`): posterior mean ≈ 1.21 vs true 1.20
-- **Easing slope** (`a1_ease`): posterior mean ≈ 0.54 vs true 0.50
+- **Tightening slope** (`a1_tight`): posterior mean ≈ 1.80 vs true 1.80
+- **Easing slope** (`a1_ease`): posterior mean ≈ 0.31 vs true 0.30
 - **Risk-sentiment coefficient** (`a2`): ≈ 0.62 vs true 0.60
-- **Cash-flow tightening slope** (`b1_tight`): ≈ −0.30 vs true −0.30
-- **Cash-flow easing slope** (`b1_ease`): ≈ −0.72 vs true −0.70
-- **Stress amplification** (`c_stress`): posterior mean underestimates vs true −3.00
+- **Cash-flow tightening slope** (`b1_tight`): ≈ −0.20 vs true −0.20
+- **Cash-flow easing slope** (`b1_ease`): ≈ −1.01 vs true −1.00
+- **Stress amplification** (`c_stress`): posterior mean underestimates vs true −5.00
 
 The underestimate on `c_stress` reflects noise in the stress-indicator residuals — stress periods account for only ~19% of the sample and the amplification signal competes with the baseline equity return variance. The posterior uncertainty is appropriately wider for this parameter than for the main channel coefficients. Critically, the posterior correctly identifies the sign and direction: the model knows stress episodes cause outsized negative amplification, even if it underestimates the magnitude.
 
