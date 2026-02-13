@@ -115,7 +115,7 @@ The regime indicators (`tight`, `stress`) are deterministic functions of observa
 
 ## Letting the Data Decide: LOO Model Comparison
 
-We fit all three models (2 chains, 500 draws, target acceptance 0.95) and compare out-of-sample predictive performance via Leave-One-Out cross-validation:
+We fit all three models (2 chains, 500 draws, target acceptance 0.95) and compare out-of-sample predictive performance via Leave-One-Out (LOO) cross-validation:
 
 ```python
 comparison = az.compare(traces, ic="loo", var_name="R_eq")
@@ -123,15 +123,15 @@ comparison = az.compare(traces, ic="loo", var_name="R_eq")
 
 ![LOO Model Comparison: Same DAG, Three Functional Forms](figures/fig2_loo_comparison.png)
 
-The result is unambiguous. The regime-switching model (ELPD = −584) is separated from both alternatives (ELPD ≈ −1320) by **736 log-points — more than 17× the standard error of the difference**. This is not a marginal improvement; the data overwhelmingly prefer the model that respects the empirical asymmetry between tightening and easing.
+The result is unambiguous. The Leave-One-Out (LOO) helps us identify the right functional form! Which confirms the strength of Bayesian approach to bridge the gap between having a DAG and actually modeling the real structure of causal relations. The regime-switching model (ELPD = −584) is separated from both alternatives (ELPD ≈ −1321) by **737 log-points — more than 17× the standard error of the difference**. This is not a marginal improvement; the data overwhelmingly prefer the model that respects the empirical asymmetry between tightening and easing.
 
-Notably, the Nonlinear (`tanh`) model is essentially tied with the Linear model. Smooth saturation is not the right nonlinearity here. The discount-rate channel does not gradually curve — it switches. Approximating a step change with a sigmoid wastes flexibility and gains nothing.
+Notably, the Nonlinear (`tanh`) model performs slightly worse than even the Linear model, despite having more parameters (17.1 effective parameters vs 12.0 for Linear). The added polynomial terms and interactions cause overfitting — the model fits training data well but generalizes poorly. Smooth saturation is not the right nonlinearity here. The discount-rate channel does not gradually curve — it switches. Approximating a step change with a sigmoid wastes flexibility and gains nothing.
 
-| Model | ELPD (LOO) | SE | Δ ELPD vs best |
-|---|---:|---:|---:|
-| **Regime** | **−584** | **16** | **0** |
-| Linear | −1320 | 40 | −736 |
-| Nonlinear | −1320 | 40 | −736 |
+| Model | ELPD (LOO) | SE | p_loo | Δ ELPD vs best | 
+|---|---:|---:|---:|---:|
+| **Regime** | **−584** | **16** | **4.9** | **0** | 
+| Linear | −1320 | 40 | 12.0 | −736 | 
+| Nonlinear | −1322 | 40 | 17.1 | −738 |
 
 ---
 
@@ -155,15 +155,15 @@ A simple strategy: predict $R_{eq}$ from each model's posterior mean, go long if
 
 ![Cumulative P&L and Stress-Period Performance by Model](figures/fig4_pnl.png)
 
-**Left panel — Cumulative return**: While all models generate positive returns, the regime model's superior specification translates to consistently stronger performance throughout the sample. The regime model achieves **7.06% return vs 5.60% for the linear and nonlinear models** — a **26% advantage** (1.46 percentage points).
+**Left panel — Cumulative return**: While all models generate positive returns, the regime model's superior specification translates to consistently stronger performance throughout the sample. The regime model achieves **7.06% return vs 5.60% for the linear and 5.62% for the nonlinear models** — a **26% advantage over linear** (1.46 percentage points). The nonlinear model's additional complexity provides no benefit; its overfitting penalties outweigh any gains from flexibility. Knowing the DAG is not enough, you need sophisticated tools to identify the real functional forms. That is precisely what PyMC can do.
 
-**Right panel — Stress episodes only**: The picture changes dramatically. During the 94 stress periods, the regime model earns **5.28% vs 2.64% for the linear and nonlinear models** — a **100% return advantage** in the episodes where amplification is highest and where misspecification is most costly.
+**Right panel — Stress episodes only**: The picture changes dramatically. During the 94 stress periods, the regime model earns **5.28% vs 2.64% for linear and 2.73% for nonlinear** — a **100% return advantage over linear** in the episodes where amplification is highest and where misspecification is most costly. The nonlinear model performs marginally better than linear during stress, but still captures less than half the regime model's returns.
 
-| Model | Full-sample return | Stress-episode return | Stress advantage |
+| Model | Full-sample return | Stress-episode return | Stress advantage vs Linear |
 |---|---:|---:|---:|
 | **Regime** | **7.06%** | **5.28%** | **+100%** |
 | Linear | 5.60% | 2.64% | baseline |
-| Nonlinear | 5.59% | 2.65% | ≈0 |
+| Nonlinear | 5.62% | 2.73% | +3.4% |
 
 *(Returns normalised so that the equity return process has a 2% standard deviation per event, consistent with typical daily equity volatility.)*
 
@@ -212,4 +212,4 @@ Structure is the starting line, not the finish. A DAG without a functional form 
 
 - Bernanke, B. S., & Kuttner, K. N. (2005). What Explains the Stock Market's Reaction to Federal Reserve Policy? *Journal of Finance*, 60(4), 1221–1257.
 - Gilchrist, S., & Zakrajšek, E. (2012). Credit Spreads and Business Cycle Fluctuations. *American Economic Review*, 102(4), 1692–1720.
-- Olivetti, E., Zoonekynd, V., Yam, P., Lopez de Prado, M., Imbens, G. W., & Hernán, M. A. (2024). Can AI Learn Causal Structure? Evidence from ADIA Lab's Causal Discovery Challenge. *SSRN 6125566*.
+- Olivetti, E., Zoonekynd, V., Yam, P., Lopez de Prado, M., Imbens, G. W., & Hernán, M. A. (2024). Can AI Learn Causal Structure? 

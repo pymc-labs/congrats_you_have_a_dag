@@ -157,25 +157,32 @@ def main():
         a1 = pm.Normal("a1", mu=0, sigma=2)
         a2 = pm.Normal("a2", mu=0, sigma=2)
         a3 = pm.Normal("a3", mu=0, sigma=2)
+        a4 = pm.Normal("a4", mu=0, sigma=1)  # quadratic term
         a_s1 = pm.HalfNormal("a_scale1", sigma=2)
         a_s2 = pm.HalfNormal("a_scale2", sigma=2)
         sigma_dr = pm.HalfNormal("sigma_dr", sigma=2)
-        dr_mu = a1 * pm.math.tanh(a_s1 * mp_vals) + a2 * pm.math.tanh(a_s2 * rs_vals) + a3 * mp_vals * rs_vals
+        dr_mu = (a1 * pm.math.tanh(a_s1 * mp_vals) + a2 * pm.math.tanh(a_s2 * rs_vals) + 
+                 a3 * mp_vals * rs_vals + a4 * mp_vals**2)
         pm.Normal("DR", mu=dr_mu, sigma=sigma_dr, observed=dr_vals)
 
         b1 = pm.Normal("b1", mu=0, sigma=2)
         b2 = pm.Normal("b2", mu=0, sigma=2)
+        b3 = pm.Normal("b3", mu=0, sigma=1)  # interaction
+        b4 = pm.Normal("b4", mu=0, sigma=1)  # quadratic
         b_s1 = pm.HalfNormal("b_scale1", sigma=2)
         b_s2 = pm.HalfNormal("b_scale2", sigma=2)
         sigma_ecf = pm.HalfNormal("sigma_ecf", sigma=2)
-        ecf_mu = b1 * pm.math.tanh(b_s1 * mp_vals) + b2 * pm.math.tanh(b_s2 * mn_vals)
+        ecf_mu = (b1 * pm.math.tanh(b_s1 * mp_vals) + b2 * pm.math.tanh(b_s2 * mn_vals) +
+                  b3 * mp_vals * mn_vals + b4 * mp_vals**2)
         pm.Normal("ECF", mu=ecf_mu, sigma=sigma_ecf, observed=ecf_vals)
 
         c1 = pm.Normal("c1", mu=0, sigma=2)
         c2 = pm.Normal("c2", mu=0, sigma=2)
         c3 = pm.Normal("c3", mu=0, sigma=2)
+        c4 = pm.Normal("c4", mu=0, sigma=1)  # interaction
         sigma_req = pm.HalfNormal("sigma_req", sigma=2)
-        pm.Normal("R_eq", mu=c1 * dr_vals + c2 * ecf_vals + c3 * rs_vals, sigma=sigma_req, observed=req_vals)
+        pm.Normal("R_eq", mu=c1 * dr_vals + c2 * ecf_vals + c3 * rs_vals + c4 * dr_vals * ecf_vals, 
+                  sigma=sigma_req, observed=req_vals)
 
     # ── 4. Sample all models (cores=1 for Windows compatibility) ──────────
     models = {"Linear": model_linear, "Regime": model_regime, "Nonlinear": model_nonlinear}
