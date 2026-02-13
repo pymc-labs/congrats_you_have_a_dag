@@ -1,0 +1,29 @@
+{
+  "loo_ranking": [
+    "Regime",
+    "Nonlinear",
+    "Linear"
+  ],
+  "loo_elpd": {
+    "Regime": -2836.644169937284,
+    "Nonlinear": -2949.6535754441365,
+    "Linear": -2949.677236443259
+  },
+  "loo_se": {
+    "Regime": 31.94837645071107,
+    "Nonlinear": 33.57241869678819,
+    "Linear": 33.54237080146494
+  },
+  "stress_pnl": {
+    "Linear": 291.53433974476184,
+    "Regime": 320.2000503650288,
+    "Nonlinear": 291.5157206379133
+  },
+  "final_cum_pnl": {
+    "Linear": 1923.2507446252018,
+    "Regime": 1950.001565635904,
+    "Nonlinear": 1923.2363258920104
+  },
+  "n_obs": 2000,
+  "n_stress": 281
+}
