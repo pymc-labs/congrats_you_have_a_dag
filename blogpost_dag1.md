@@ -20,18 +20,28 @@ The answer matters enormously for anyone who wants to trade the insight. **The s
 
 ## The Structure: Bernanke-Kuttner Channels
 
+To illustrate the argument, we use the casual relation between Monetary Policy surprises and equity prices, based on Bernanke & Kuttner (2005).  Bernanke & Kuttner (2005) is one of the most cited studies in monetary economics — it provided the first clean causal identification of how Federal Reserve policy surprises move equity prices, using Fed Funds futures to isolate the unexpected component of rate decisions. 
+
+We adopt their causal structure precisely because the DAG itself is uncontroversial: the debate is not *whether* these channels exist, but *what shape* the response functions take — which is exactly the question this post investigates.   
+
 The canonical DAG from the monetary policy transmission literature decomposes equity return responses to policy surprises into two channels:
 
 ```
   Macro news (MN) ──────────────────────────┐
        │                                     │
        ▼                                     ▼
-  MP_surprise ──► Discount rates (DR) ──► Equity return (R_eq)
+  Monetary Policy surprise (MP_surp) ──► Discount rates (DR) ──► Equity return (R_eq)
        │                                     ▲
        └──────► Expected cash flows (ECF) ───┘
                                              ▲
   Risk sentiment (RS) ───────────────────────┘
 ```
+
+The Monetary Policy surprise variable measures how much the Federal Reserve's interest rate decision differed from what markets expected beforehand. Bernanke & Kuttner(2005), computed it from Fed Funds futures prices in a narrow window around an FOMC announcement. The idea is simple: if the futures market was pricing a rate of 5.25% and the Fed announced  5.50%, that's a +25 basis point tightening surprise.
+
+The Monetary policy surprises have a negative impact on the expected cash flows as they represent higher than expected borrowing costs for the economy. The effect of the MP surprises onthe discount rates is positive, and they affect negatively the Equity prices.
+
+
 
 The structural equations take the general form:
 
@@ -39,13 +49,56 @@ $$DR = f_1(\text{MP\_surp}, RS) + \varepsilon_1$$
 $$ECF = f_2(\text{MP\_surp}, MN) + \varepsilon_2$$
 $$R_{eq} = f_3(DR, ECF, RS) + \varepsilon_3$$
 
+Where the $\varepsilon$ terms corerspond to random Gaussian noise terms with mean zero.
+
+### Ground truth: the regime-switching Data Generation Process (DGP)
+
+In our demonstration the data is generated from a regime-switching process that embeds sharp asymmetries between monetary-policy tightening ($\text{MP\_surp} > 0$) and easing ($\text{MP\_surp} \le 0$). The explicit structural equations are:
+
+$$\text{MP\_surp} = 0.5\;\text{MN} + 1.5\;\varepsilon_{MP}$$
+
+$$DR = \begin{cases} 1.8\;\text{MP\_surp} & \text{tightening} \\ 0.3\;\text{MP\_surp} & \text{easing} \end{cases} + 0.6\;RS + 0.7\;\varepsilon_{DR}$$
+
+$$ECF = \begin{cases} -0.2\;\text{MP\_surp} & \text{tightening} \\ -1.0\;\text{MP\_surp} & \text{easing} \end{cases} + 0.7\;\text{MN} + 0.7\;\varepsilon_{ECF}$$
+
+$$R_{eq} = -0.6\;DR + 0.8\;ECF + 0.5\;RS + \underbrace{-5.0\;\lvert\text{MP\_surp}\rvert \cdot \mathbf{1}[Z > 1]}_{\text{stress amplifier}} + 0.8\;\varepsilon_{R}$$
+
+where $Z \sim \mathcal{N}(0,1)$ is an independent contagion shock (unobserved), so the stress amplifier fires in roughly 16 % of observations. The key asymmetries are: tightening surprises raise discount rates **6 $\times$** more than easing lowers them ($1.8$ vs $0.3$), while easing boosts expected cash flows **5 $\times$** more than tightening depresses them ($1.0$ vs $0.2$). On top of these regime switches, rare stress episodes add a crash amplifier proportional to the size of the surprise. A symmetric linear model cannot capture any of these features.
+
 The causal graph is agreed upon — it follows directly from Bernanke & Kuttner (2005). What remains open is the shape of $f_1, f_2, f_3$.
 
 ---
 
-## The Asymmetry Is Already Visible in the Data
+## Data generating process
 
-Before fitting any model, a simple scatter plot reveals the core problem with the linear assumption.
+We generate 500 synthetic observations by sampling directly from the regime-switching structural equations above. The function below encodes the full causal mechanism — asymmetric coefficients, an unobserved contagion shock, and additive Gaussian noise at every node:
+
+```python
+def dgp_mp_regime(n=2000, seed=42):
+    rng = np.random.default_rng(seed)
+    RS = rng.normal(0, 1, n)
+    MN = rng.normal(0, 1, n)
+    MP_surp = 0.5 * MN + 1.5 * rng.normal(0, 1, n)
+    tightening = MP_surp > 0
+    DR = (np.where(tightening, 1.8 * MP_surp, 0.3 * MP_surp)
+          + 0.6 * RS + 0.7 * rng.normal(0, 1, n))
+    ECF = (np.where(tightening, -0.2 * MP_surp, -1.0 * MP_surp)
+           + 0.7 * MN + 0.7 * rng.normal(0, 1, n))
+    Z = rng.normal(0, 1, n)           # independent contagion shock
+    stress = Z > 1.0                  # ~16 % of observations
+    R_eq = (
+        -0.6 * DR + 0.8 * ECF + 0.5 * RS
+        + np.where(stress, -5.0 * np.abs(MP_surp), 0.0)
+        + 0.8 * rng.normal(0, 1, n)
+    )
+    return {"RS": RS, "MN": MN, "MP_surp": MP_surp,
+            "DR": DR, "ECF": ECF, "R_eq": R_eq,
+            "stress": stress.astype(float)}
+```
+
+### The Asymmetry Is Already Visible in the Data
+
+Before fitting any model, a simple scatter plot of the data generated reveals the core problem with the linear assumption.
 
 ![Asymmetric slopes: tightening hits discount rates harder than easing relieves them](figures/fig1_scatter_asymmetry.png)
 
@@ -61,7 +114,7 @@ A linear model forced to fit both regimes simultaneously will average across thi
 
 We generate synthetic data from a regime-switching data-generating process (the ground truth), then fit three competing PyMC models that all share the same DAG.
 
-**The ground truth** (regime-switching DGP): tightening surprises hit discount rates 6.0× harder than easing surprises (`1.8 vs 0.3`). The cash-flow channel shows a 5.0× asymmetry (`-0.2 vs -1.0`), with easing driving much stronger growth effects. During stress episodes — triggered by an independent contagion shock uncorrelated with the main predictors — an amplification term suppresses equity returns sharply.
+**The ground truth** (regime-switching Data Generating Process (DGP)): tightening surprises hit discount rates 6.0× harder than easing surprises (`1.8 vs 0.3`). The cash-flow channel shows a 5.0× asymmetry (`-0.2 vs -1.0`), with easing driving much stronger growth effects. During stress episodes — triggered by an independent contagion shock uncorrelated with the main predictors — an amplification term suppresses equity returns sharply.
 
 ```python
 def dgp_mp_regime(n=500, seed=42):
@@ -171,7 +224,7 @@ The stress-episode return gap (2.64 percentage points across 94 events) represen
 
 ---
 
-## The Model Knows What It's Doing
+## Calibration
 
 One final check: does the winning model actually recover the causal parameters?
 
