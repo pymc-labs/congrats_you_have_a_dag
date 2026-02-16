@@ -30,15 +30,15 @@ The canonical DAG from the monetary policy transmission literature decomposes eq
 Macro news (MN) ──────────────────────────────────┐
                │                                  │
                ▼                                  ▼
-  Monetary Policy surprise (MP_surp) ──────► Expected cash flows (ECF) ──┐
-               │              │                                          │
-               │              │                                          ▼
-               │              └────────────► Discount rates (DR) ──► Equity return (R_eq)
-               │                                                     ▲   ▲
-               │                                                     │   │
-               └─────────────────────────────────────────────────────┘   │
-                                                  ▲                      │
-  Risk sentiment (RS) ────────────────────────────┴──────────────────────┘
+  Monetary Policy surprise (MP_surp) ──────► Expected cash flows (ECF)  ──┐
+               │              │                                           │
+               │              │                                           ▼
+               │              └────────────► Discount rates (DR) ──► Equity return (R_eq)                             
+               │                                  ▲                  ▲    ▲
+               │                                  │                  │    │
+               └──────────────────────────────────│──────────────────┘    │
+                                                  │                       │
+  Risk sentiment (RS) ────────────────────────────┴───────────────────────┘
 ```
 
 The Monetary Policy surprise variable measures how much the Federal Reserve's interest rate decision differed from what markets expected beforehand. Bernanke & Kuttner(2005), computed it from Fed Funds futures prices in a narrow window around an FOMC announcement. The idea is simple: if the futures market was pricing a rate of 5.25% and the Fed announced  5.50%, that's a +25 basis point tightening surprise.
@@ -52,7 +52,7 @@ The structural equations take the general form:
 $$\text{MP\_surp} = f_0(MN) + \varepsilon_0$$
 $$DR = f_1(\text{MP\_surp}, RS) + \varepsilon_1$$
 $$ECF = f_2(\text{MP\_surp}, MN) + \varepsilon_2$$
-$$R_{eq} = f_3(DR) + \varepsilon_3$$
+$$R_{eq} = f_3(DR, ECF,RS,MP ) + \varepsilon_3$$
 
 Where the $\varepsilon$ terms corerspond to random Gaussian noise terms with mean zero.
 
@@ -78,8 +78,7 @@ The causal graph is agreed upon — it follows directly from Bernanke & Kuttner 
 
 ## Data generating process
 
-We generate 500 synthetic observations by sampling directly from the regime-switching structural equations above. The function below encodes the full causal mechanism — asymmetric coefficients, an unobserved contagion shock, and additive Gaussian noise at every node:
-
+To make the problem concrete, we generate synthetic data from the regime-switching DGP defined above (the ground truth) The function below encodes the full data generation process:
 ```python
 def dgp_mp_regime(n=2000, seed=42):
     rng = np.random.default_rng(seed)
@@ -119,23 +118,11 @@ A linear model forced to fit both regimes simultaneously will average across thi
 
 ## Same DAG, Three Stories
 
-We generate synthetic data from a regime-switching data-generating process (the ground truth), then fit three competing PyMC models that all share the same DAG.
-
-**The ground truth** (regime-switching Data Generating Process (DGP)): tightening surprises hit discount rates 6.0× harder than easing surprises (`1.8 vs 0.3`). The cash-flow channel shows a 5.0× asymmetry (`-0.2 vs -1.0`), with easing driving much stronger growth effects. During stress episodes — triggered by an independent contagion shock uncorrelated with the main predictors — an amplification term suppresses equity returns sharply.
-
-```python
-def dgp_mp_regime(n=500, seed=42):
-    tightening = MP_surp > 0
-    DR = np.where(tightening, 1.8 * MP_surp, 0.3 * MP_surp) + 0.6 * RS + 0.7 * noise
-    ECF = np.where(tightening, -0.2 * MP_surp, -1.0 * MP_surp) + 0.7 * MN + 0.7 * noise
-    Z = rng.normal(0, 1, n)          # independent contagion shock (unobserved driver)
-    stress = Z > 1.0                 # ~19% of events, uncorrelated with RS/MN/MP_surp
-    R_eq = -0.6 * DR + 0.8 * ECF + 0.5 * RS + np.where(stress, -5.0 * |MP_surp|, 0) + 0.8 * noise
-```
+After egenerating the data, we now fit three competing PyMC models that share the same causal graph but assume different functional forms — linear, regime-switching, and nonlinear. The goal is to show that the correctly specified model recovers the true data-generating process and translates into profitable decisions.
 
 **Model A — Linear**: Symmetric, proportional effects. One slope for both tightening and easing. The textbook baseline.
 
-**Model B — Regime-switching**: Separate slopes for tightening vs easing in both channels, plus a stress-period amplification term in equity returns. Encodes the empirical regularity.
+**Model B — Regime-switching**: This is the ground truth model used in the data generating process.
 
 **Model C — Nonlinear**: Smooth `tanh` saturation in both channels with an interaction term. Captures diminishing returns but treats the asymmetry as a smooth transition rather than a discrete switch.
 
