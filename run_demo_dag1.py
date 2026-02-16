@@ -96,8 +96,8 @@ def main():
         axes[0].scatter(df["MP_surp"][mask], df["DR"][mask], alpha=0.15, s=10, label=label, color=color)
         axes[1].scatter(df["MP_surp"][mask], df["ECF"][mask], alpha=0.15, s=10, label=label, color=color)
 
-    axes[0].set(xlabel="Monetary Policy Surprise", ylabel="Discount Rate (DR)", title="Discount-Rate Channel")
-    axes[1].set(xlabel="Monetary Policy Surprise", ylabel="Expected Cash Flows (ECF)", title="Cash-Flow Channel")
+    axes[0].set(xlabel="Monetary Policy Surprise", ylabel="Change in Discount Rate (ΔDR)", title="Discount-Rate Channel")
+    axes[1].set(xlabel="Monetary Policy Surprise", ylabel="Change in Expected Cash Flows (ΔECF)", title="Cash-Flow Channel")
     for ax in axes:
         ax.legend(fontsize=10, framealpha=0.9)
         ax.axvline(0, color="grey", ls="--", alpha=0.4, lw=0.8)

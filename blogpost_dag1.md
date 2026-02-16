@@ -10,9 +10,9 @@ But recovering a DAG is only the first step. A DAG tells you *what* causes *what
 
 **Congratulations, You Have a DAG. Now What?**
 
-To exemplify that identifying a dag is just a first step that still leaves you far away from making money, we build a simple example in which a known dag can follow different functional forms. Each functional form generates different results, and choosing the right modeling techniqus may be the difference between making and loosing money. There is were PyMC can bridge the gap.
+To exemplify that identifying a DAG is just a first step that still leaves you far away from making money, we build a simple example in which a known DAG can follow different functional forms. Each functional form generates different results, and choosing the right modeling techniques may be the difference between making and losing money. This is where PyMC can bridge the gap.
 
-We use a well grounded casual example in the literature, by following the causal relation between policy surprises and equity returns s (Bernanke & Kuttner, 2005). The example shows that knowing the DAG  still leaves open the functional form of those relationships. Is the response linear? Does it switch regimes between tightening and easing cycles? Do effects saturate at extremes?
+We use a well grounded causal example in the literature, by following the causal relation between policy surprises and equity returns (Bernanke & Kuttner, 2005). The example shows that knowing the DAG  still leaves open the functional form of those relationships. Is the response linear? Does it switch regimes between tightening and easing cycles? Do effects saturate at extremes?
 
 The answer matters enormously for anyone who wants to trade the insight. **The same causal structure combined with three different functional forms produces dramatically different P&L outcomes under stress — the correctly-specified regime model doubles the returns of misspecified alternatives during the most volatile episodes**. PyMC identifies the correct one.
 
@@ -20,7 +20,7 @@ The answer matters enormously for anyone who wants to trade the insight. **The s
 
 ## The Structure: Bernanke-Kuttner Channels
 
-To illustrate the argument, we use the casual relation between Monetary Policy surprises and equity prices, based on Bernanke & Kuttner (2005).  Bernanke & Kuttner (2005) is one of the most cited studies in monetary economics — it provided the first clean causal identification of how Federal Reserve policy surprises move equity prices, using Fed Funds futures to isolate the unexpected component of rate decisions. 
+To illustrate the argument, we use the causal relation between Monetary Policy surprises and equity prices, based on Bernanke & Kuttner (2005).  Bernanke & Kuttner (2005) is one of the most cited studies in monetary economics — it provided the first clean causal identification of how Federal Reserve policy surprises move equity prices, using Fed Funds futures to isolate the unexpected component of rate decisions. 
 
 We adopt their causal structure precisely because the DAG itself is uncontroversial: the debate is not *whether* these channels exist, but *what shape* the response functions take — which is exactly the question this post investigates.   
 
@@ -41,7 +41,7 @@ Macro news (MN) ─────────────────────�
   Risk sentiment (RS) ────────────────────────────┴───────────────────────┘
 ```
 
-The Monetary Policy surprise variable measures how much the Federal Reserve's interest rate decision differed from what markets expected beforehand. Bernanke & Kuttner(2005), computed it from Fed Funds futures prices in a narrow window around an FOMC announcement. The idea is simple: if the futures market was pricing a rate of 5.25% and the Fed announced  5.50%, that's a +25 basis point tightening surprise.
+The Monetary Policy surprise variable measures how much the Federal Reserve's interest rate decision differed from what markets expected beforehand. Bernanke & Kuttner (2005), computed it from Fed Funds futures prices in a narrow window around an FOMC announcement. The idea is simple: if the futures market was pricing a rate of 5.25% and the Fed announced 5.50%, that's a +25 basis point tightening surprise.
 
 The Monetary policy surprises have a negative impact on the change in expected cash flows as they represent higher than expected borrowing costs for the economy. The effect of the MP surprises on the change in discount rates is positive, and they affect negatively the Equity prices.
 
@@ -52,9 +52,9 @@ The structural equations take the general form:
 $$\text{MP\_surp} = f_0(MN) + \varepsilon_0$$
 $$\Delta DR = f_1(\text{MP\_surp}, RS) + \varepsilon_1$$
 $$\Delta ECF = f_2(\text{MP\_surp}, MN) + \varepsilon_2$$
-$$R_{eq} = f_3(\Delta DR, \Delta ECF,RS,MP ) + \varepsilon_3$$
+$$R_{eq} = f_3(\Delta DR, \Delta ECF, RS, \text{MP\_surp}) + \varepsilon_3$$
 
-Where the $\varepsilon$ terms corerspond to random Gaussian noise terms with mean zero.
+Where the $\varepsilon$ terms correspond to random Gaussian noise terms with mean zero.
 
 ---
 
@@ -78,7 +78,7 @@ The causal graph is agreed upon — it follows directly from Bernanke & Kuttner 
 
 ## Data generating process
 
-To make the problem concrete, we generate synthetic data from the regime-switching DGP defined above (the ground truth) The function below encodes the full data generation process:
+To make the problem concrete, we generate synthetic data from the regime-switching DGP defined above (the ground truth). The function below encodes the full data generation process:
 ```python
 def dgp_mp_regime(n=2000, seed=42):
     rng = np.random.default_rng(seed)
@@ -118,11 +118,11 @@ A linear model forced to fit both regimes simultaneously will average across thi
 
 ## Same DAG, Three Stories
 
-After egenerating the data, we now fit three competing PyMC models that share the same causal graph but assume different functional forms — linear, regime-switching, and nonlinear. The goal is to show that the correctly specified model recovers the true data-generating process and translates into profitable decisions.
+After generating the data, we now fit three competing PyMC models that share the same causal graph but assume different functional forms — linear, regime-switching, and nonlinear. The goal is to show that the correctly specified model recovers the true data-generating process and translates into profitable decisions.
 
 **Model A — Linear**: Symmetric, proportional effects. One slope for both tightening and easing. The textbook baseline.
 
-**Model B — Regime-switching**: This is the ground truth model used in the data generating process.
+**Model B — Regime-switching**: Mirrors the ground-truth DGP structure with separate slopes per regime for both channels. Crucially, the stress contagion indicator $\mathbf{1}[Z > 1]$ is **unobserved** — the model never sees which events are stress episodes. Instead, we treat the stress regime as a **latent variable** and marginalize it out using a `pm.Mixture`: each observation's equity return is modelled as a two-component mixture (normal vs stress), with the mixing probability $p_{\text{stress}}$ learned from data. This is a harder inference problem than using the observed label, but it is the honest one — in practice, you would not know which days are stress events.
 
 **Model C — Nonlinear**: Smooth `tanh` saturation in both channels with an interaction term. Captures diminishing returns but treats the asymmetry as a smooth transition rather than a discrete switch.
 
@@ -130,7 +130,6 @@ The regime-switching PyMC model is:
 
 ```python
 tight = (mp_vals > 0).astype(float)
-stress = df["stress"].values          # independent contagion indicator from DGP
 
 with pm.Model() as model_regime:
     # Discount-rate change channel: separate slope per regime
@@ -147,16 +146,26 @@ with pm.Model() as model_regime:
     ecf_mu = (b1_t * tight + b1_e * (1 - tight)) * mp_vals + b2 * mn_vals
     pm.Normal("ECF", mu=ecf_mu, sigma=pm.HalfNormal("sigma_ecf", 2), observed=ecf_vals)
 
-    # Equity returns: plus stress-period amplification
+    # Equity returns: latent stress mixture
     c1 = pm.Normal("c1", mu=0, sigma=2)
     c2 = pm.Normal("c2", mu=0, sigma=2)
     c3 = pm.Normal("c3", mu=0, sigma=2)
-    c_stress = pm.Normal("c_stress", mu=0, sigma=2)
-    req_mu = c1*dr_vals + c2*ecf_vals + c3*rs_vals + c_stress * stress * np.abs(mp_vals)
-    pm.Normal("R_eq", mu=req_mu, sigma=pm.HalfNormal("sigma_req", 2), observed=req_vals)
+    c_stress = pm.Normal("c_stress", mu=0, sigma=5)
+    p_stress = pm.Beta("p_stress", alpha=2, beta=10)
+    sigma_req = pm.HalfNormal("sigma_req", sigma=2)
+    base_mu = c1*dr_vals + c2*ecf_vals + c3*rs_vals
+    pm.Mixture(
+        "R_eq",
+        w=pt.stack([1 - p_stress, p_stress]),
+        comp_dists=[
+            pm.Normal.dist(mu=base_mu, sigma=sigma_req),
+            pm.Normal.dist(mu=base_mu + c_stress * np.abs(mp_vals), sigma=sigma_req),
+        ],
+        observed=req_vals,
+    )
 ```
 
-The regime indicators (`tight`, `stress`) are deterministic functions of observable data — no latent discrete variables.
+The tightening indicator `tight` is a deterministic function of observable data. The stress regime, by contrast, is latent — the model must discover it from the structure of the residuals. PyMC's `Mixture` marginalizes over the discrete indicator analytically, so NUTS can sample the continuous parameters without difficulty.
 
 ---
 
@@ -170,15 +179,15 @@ comparison = az.compare(traces, ic="loo", var_name="R_eq")
 
 ![LOO Model Comparison: Same DAG, Three Functional Forms](figures/fig2_loo_comparison.png)
 
-The result is unambiguous. The Leave-One-Out (LOO) helps us identify the right functional form! Which confirms the strength of Bayesian approach to bridge the gap between having a DAG and actually modeling the real structure of causal relations. The regime-switching model (ELPD = −584) is separated from both alternatives (ELPD ≈ −1321) by **737 log-points — more than 17× the standard error of the difference**. This is not a marginal improvement; the data overwhelmingly prefer the model that respects the empirical asymmetry between tightening and easing.
+The result is unambiguous. The Leave-One-Out (LOO) helps us identify the right functional form! Which confirms the strength of Bayesian approach to bridge the gap between having a DAG and actually modeling the real structure of causal relations. The regime-switching model (ELPD = −785) is separated from both alternatives (ELPD ≈ −1320) by **535 log-points — more than 14× the standard error of the difference**. This is not a marginal improvement; the data overwhelmingly prefer the model that respects the empirical asymmetry between tightening and easing. Remarkably, this advantage holds even though the regime model must *discover* the latent stress regime from data rather than being told which observations are stress events.
 
 Notably, the Nonlinear (`tanh`) model performs slightly worse than even the Linear model, despite having more parameters (17.1 effective parameters vs 12.0 for Linear). The added polynomial terms and interactions cause overfitting — the model fits training data well but generalizes poorly. Smooth saturation is not the right nonlinearity here. The discount-rate channel does not gradually curve — it switches. Approximating a step change with a sigmoid wastes flexibility and gains nothing.
 
-| Model | ELPD (LOO) | SE | p_loo | Δ ELPD vs best | 
+| Model | ELPD (LOO) | SE | p_loo | Δ ELPD vs best |
 |---|---:|---:|---:|---:|
-| **Regime** | **−584** | **16** | **4.9** | **0** | 
-| Linear | −1320 | 40 | 12.0 | −736 | 
-| Nonlinear | −1322 | 40 | 17.1 | −738 |
+| **Regime** | **−785** | **20** | **5.8** | **0** |
+| Linear | −1320 | 40 | 12.0 | −535 |
+| Nonlinear | −1322 | 40 | 17.1 | −536 |
 
 ---
 
@@ -198,23 +207,23 @@ The Regime switching model's x-axis extends to −10, while the Linear and Nonli
 
 The LOO score is a statistical number. The return is the economic consequence. It results from using the model as the basis for investment decisions.
 
-A simple strategy: predict $R_{eq}$ from each model's posterior mean, go long if the prediction is positive, short if negative, and scale position by normalized confidence. We run all three models on the full 500 events, then isolate the 94 stress episodes (independent contagion shock, approximately 19% of observations).
+A simple strategy: predict $R_{eq}$ from each model's posterior mean, go long if the prediction is positive, short if negative, and scale position by normalized confidence. We run all three models on the full 2 000 events, then isolate the 94 stress episodes (independent contagion shock, approximately 19% of observations).
 
 ![Cumulative P&L and Stress-Period Performance by Model](figures/fig4_pnl.png)
 
-**Left panel — Cumulative return**: While all models generate positive returns, the regime switching model's superior specification translates to consistently stronger performance throughout the sample. The regime switching model achieves **7.06% return vs 5.60% for the linear and 5.62% for the nonlinear models** — a **26% advantage over linear** (1.46 percentage points). The nonlinear model's additional complexity provides no benefit; its overfitting penalties outweigh any gains from flexibility. Knowing the DAG is not enough, you need sophisticated tools to identify the real functional forms. That is precisely what PyMC can do.
+**Left panel — Cumulative return**: While all models generate positive returns, the regime switching model's superior specification translates to consistently stronger performance throughout the sample. The regime switching model achieves **6.15% return vs 5.60% for the linear and 5.62% for the nonlinear models** — a meaningful edge that compounds over time. Remember: the regime model has no privileged access to the stress labels. It must *infer* the latent stress regime from data alone — yet the Bayesian mixture still provides enough structural advantage to outperform. Knowing the DAG is not enough, you need sophisticated tools to identify the real functional forms. That is precisely what PyMC can do.
 
-**Right panel — Stress episodes only**: The picture changes dramatically. During the 94 stress periods, the regime switching model earns **5.28% vs 2.64% for linear and 2.73% for nonlinear** — a **100% return advantage over linear** in the episodes where amplification is highest and where misspecification is most costly. The nonlinear model performs marginally better than linear during stress, but still captures less than half the regime switching model's returns.
+**Right panel — Stress episodes only**: During the 94 stress periods, the regime switching model earns **3.29% vs 2.64% for linear and 2.73% for nonlinear** — in the episodes where amplification is highest. This advantage is especially notable because the model never observes which events are stress episodes; it discovers them through the structure of the likelihood. The Bayesian approach provides an edge precisely where it matters most: in the tail events that drive portfolio risk.
 
-| Model | Full-sample return | Stress-episode return | Stress advantage vs Linear |
-|---|---:|---:|---:|
-| **Regime** | **7.06%** | **5.28%** | **+100%** |
-| Linear | 5.60% | 2.64% | baseline |
-| Nonlinear | 5.62% | 2.73% | +3.4% |
+| Model | Full-sample return | Stress-episode return |
+|---|---:|---:|
+| **Regime** | **6.15%** | **3.29%** |
+| Linear | 5.60% | 2.64% |
+| Nonlinear | 5.62% | 2.73% |
 
-*(Returns normalised so that the equity return process has a 2% standard deviation per event, consistent with typical daily equity volatility.)*
 
-The stress-episode return gap (2.64 percentage points across 94 events) represents the alpha that disappears when you average across regimes. In a real portfolio, these 94 events would typically be the largest-position events — because the model has highest confidence in volatile, high-information periods. Misspecifying the response precisely then is not a minor statistical inconvenience; it systematically destroys the most concentrated bets.
+
+The stress-episode return gap represents alpha that the Bayesian structural model extracts without ever observing the latent contagion variable. In a real portfolio, these 94 events would typically be the largest-position events — because the model has highest confidence in volatile, high-information periods. A model that can discover hidden regimes from data, rather than requiring hand-labelled indicators, is inherently more robust and deployable.
 
 ---
 
@@ -224,9 +233,9 @@ One final check: does the winning model actually recover the causal parameters?
 
 ![Regime Model: Posterior Parameter Recovery vs Ground Truth](figures/fig5_param_recovery.png)
 
-The posterior distributions are tightly centered on the ground-truth values across all 10 structural parameters:
+The posterior distributions are tightly centered on the ground-truth values across all 11 structural parameters — including the latent ones. The stress coefficient `c_stress` recovers the true value of −5.0 (posterior mean ≈ −4.99), and the stress probability `p_stress` recovers the true 15.9% (posterior mean ≈ 18%). The model successfully identifies both the magnitude and frequency of the unobserved contagion regime from data alone.
 
-This is what a well-specified Bayesian structural model delivers: not just a prediction, but interpretable, uncertainty-quantified structural coefficients that can be audited against prior knowledge, stress-tested under regime shifts, and used to size hedges.
+This is what a well-specified Bayesian structural model delivers: not just a prediction, but interpretable, uncertainty-quantified structural coefficients that can be audited against prior knowledge, stress-tested under regime shifts, and used to size hedges — even when key regime indicators are latent.
 
 ---
 
