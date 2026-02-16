@@ -1,6 +1,6 @@
 # Congratulations, You Have a DAG. Now What?
 
-**Authored by**: PyMC Labs
+**Authored by**: Camilo Saldarriaga, Alexander Fengler, Francesco Muia
 
 ---
 
@@ -27,29 +27,36 @@ We adopt their causal structure precisely because the DAG itself is uncontrovers
 The canonical DAG from the monetary policy transmission literature decomposes equity return responses to policy surprises into two channels:
 
 ```
-  Macro news (MN) ──────────────────────────┐
-       │                                     │
-       ▼                                     ▼
-  Monetary Policy surprise (MP_surp) ──► Discount rates (DR) ──► Equity return (R_eq)
-       │                                     ▲
-       └──────► Expected cash flows (ECF) ───┘
-                                             ▲
-  Risk sentiment (RS) ───────────────────────┘
+Macro news (MN) ──────────────────────────────────┐
+               │                                  │
+               ▼                                  ▼
+  Monetary Policy surprise (MP_surp) ──────► Expected cash flows (ECF) ──┐
+               │              │                                          │
+               │              │                                          ▼
+               │              └────────────► Discount rates (DR) ──► Equity return (R_eq)
+               │                                  ▲                  ▲   ▲
+               │                                  │                  │   │
+               └──────────────────────────────────┴──────────────────┘   │
+                                                  ▲                      │
+  Risk sentiment (RS) ────────────────────────────┴──────────────────────┘
 ```
 
 The Monetary Policy surprise variable measures how much the Federal Reserve's interest rate decision differed from what markets expected beforehand. Bernanke & Kuttner(2005), computed it from Fed Funds futures prices in a narrow window around an FOMC announcement. The idea is simple: if the futures market was pricing a rate of 5.25% and the Fed announced  5.50%, that's a +25 basis point tightening surprise.
 
 The Monetary policy surprises have a negative impact on the expected cash flows as they represent higher than expected borrowing costs for the economy. The effect of the MP surprises onthe discount rates is positive, and they affect negatively the Equity prices.
 
-
+The remaining nodes in the graph are: **Equity return** ($R_{eq}$), the broad stock-market index return on the day of the announcement — think of it as the S&P 500's daily move. **Discount rates** ($DR$) capture the shift in risk-free yields (e.g. Treasury rates) that reprices every future cash-flow stream. **Expected cash flows** ($ECF$) summarise the market's revised forecast of future corporate earnings — when borrowing costs jump unexpectedly, analysts mark down profit expectations. Finally, **Risk sentiment** ($RS$) is a latent measure of investors' willingness to bear risk; in the original paper it is proxied by credit spreads or the VIX, while in our synthetic data it is simply an exogenous standard-normal draw, independent of the policy surprise.
 
 The structural equations take the general form:
 
+$$\text{MP\_surp} = f_0(MN) + \varepsilon_0$$
 $$DR = f_1(\text{MP\_surp}, RS) + \varepsilon_1$$
 $$ECF = f_2(\text{MP\_surp}, MN) + \varepsilon_2$$
-$$R_{eq} = f_3(DR, ECF, RS) + \varepsilon_3$$
+$$R_{eq} = f_3(DR) + \varepsilon_3$$
 
 Where the $\varepsilon$ terms corerspond to random Gaussian noise terms with mean zero.
+
+---
 
 ### Ground truth: the regime-switching Data Generation Process (DGP)
 
@@ -190,27 +197,27 @@ Notably, the Nonlinear (`tanh`) model performs slightly worse than even the Line
 
 ## Posterior Predictive Checks: A Subtler Signal
 
-LOO tells you which model predicts better. Posterior predictive checks tell you *where* models fail.
+LOO tells you which model predicts better. Posterior predictive checks tell you *how* models fail.
 
 ![Posterior Predictive Checks: Equity Returns (R_eq)](figures/fig3_ppc.png)
 
 All three models reproduce the bulk of the equity return distribution. The cumulative density functions (blue = posterior predictive draws, black = observed) overlap tightly in the center. But the tails diverge.
 
-The Regime model's x-axis extends to −10, while the Linear and Nonlinear panels barely reach −7. Only the regime-switching specification generates the left-tail mass consistent with the stress-amplified drawdowns in the data. The linear model's predictive distribution is systematically too narrow at the left extremes — precisely the events that drive risk and position-sizing decisions.
+The Regime switching model's x-axis extends to −10, while the Linear and Nonlinear panels barely reach −7. Only the regime-switching specification generates the left-tail mass consistent with the stress-amplified drawdowns in the data. The linear model's predictive distribution is systematically too narrow at the left extremes — precisely the events that drive risk and position-sizing decisions.
 
 ---
 
 ## Wrong Form, Right DAG, Bad P&L
 
-The LOO score is a statistical number. The return is the economic consequence.
+The LOO score is a statistical number. The return is the economic consequence. It results from using the model as the basis for investment decisions.
 
 A simple strategy: predict $R_{eq}$ from each model's posterior mean, go long if the prediction is positive, short if negative, and scale position by normalized confidence. We run all three models on the full 500 events, then isolate the 94 stress episodes (independent contagion shock, approximately 19% of observations).
 
 ![Cumulative P&L and Stress-Period Performance by Model](figures/fig4_pnl.png)
 
-**Left panel — Cumulative return**: While all models generate positive returns, the regime model's superior specification translates to consistently stronger performance throughout the sample. The regime model achieves **7.06% return vs 5.60% for the linear and 5.62% for the nonlinear models** — a **26% advantage over linear** (1.46 percentage points). The nonlinear model's additional complexity provides no benefit; its overfitting penalties outweigh any gains from flexibility. Knowing the DAG is not enough, you need sophisticated tools to identify the real functional forms. That is precisely what PyMC can do.
+**Left panel — Cumulative return**: While all models generate positive returns, the regime switching model's superior specification translates to consistently stronger performance throughout the sample. The regime switching model achieves **7.06% return vs 5.60% for the linear and 5.62% for the nonlinear models** — a **26% advantage over linear** (1.46 percentage points). The nonlinear model's additional complexity provides no benefit; its overfitting penalties outweigh any gains from flexibility. Knowing the DAG is not enough, you need sophisticated tools to identify the real functional forms. That is precisely what PyMC can do.
 
-**Right panel — Stress episodes only**: The picture changes dramatically. During the 94 stress periods, the regime model earns **5.28% vs 2.64% for linear and 2.73% for nonlinear** — a **100% return advantage over linear** in the episodes where amplification is highest and where misspecification is most costly. The nonlinear model performs marginally better than linear during stress, but still captures less than half the regime model's returns.
+**Right panel — Stress episodes only**: The picture changes dramatically. During the 94 stress periods, the regime switching model earns **5.28% vs 2.64% for linear and 2.73% for nonlinear** — a **100% return advantage over linear** in the episodes where amplification is highest and where misspecification is most costly. The nonlinear model performs marginally better than linear during stress, but still captures less than half the regime switching model's returns.
 
 | Model | Full-sample return | Stress-episode return | Stress advantage vs Linear |
 |---|---:|---:|---:|
@@ -231,15 +238,6 @@ One final check: does the winning model actually recover the causal parameters?
 ![Regime Model: Posterior Parameter Recovery vs Ground Truth](figures/fig5_param_recovery.png)
 
 The posterior distributions are tightly centered on the ground-truth values across all 10 structural parameters:
-
-- **Tightening slope** (`a1_tight`): posterior mean ≈ 1.80 vs true 1.80
-- **Easing slope** (`a1_ease`): posterior mean ≈ 0.31 vs true 0.30
-- **Risk-sentiment coefficient** (`a2`): ≈ 0.62 vs true 0.60
-- **Cash-flow tightening slope** (`b1_tight`): ≈ −0.20 vs true −0.20
-- **Cash-flow easing slope** (`b1_ease`): ≈ −1.01 vs true −1.00
-- **Stress amplification** (`c_stress`): posterior mean underestimates vs true −5.00
-
-The underestimate on `c_stress` reflects noise in the stress-indicator residuals — stress periods account for only ~19% of the sample and the amplification signal competes with the baseline equity return variance. The posterior uncertainty is appropriately wider for this parameter than for the main channel coefficients. Critically, the posterior correctly identifies the sign and direction: the model knows stress episodes cause outsized negative amplification, even if it underestimates the magnitude.
 
 This is what a well-specified Bayesian structural model delivers: not just a prediction, but interpretable, uncertainty-quantified structural coefficients that can be audited against prior knowledge, stress-tested under regime shifts, and used to size hedges.
 
