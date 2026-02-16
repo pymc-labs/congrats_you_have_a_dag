@@ -8,6 +8,7 @@ warnings.filterwarnings("ignore", category=RuntimeWarning)
 import numpy as np
 import pandas as pd
 import pymc as pm
+import pytensor.tensor as pt
 import arviz as az
 import matplotlib
 matplotlib.use("Agg")
@@ -86,7 +87,6 @@ def main():
     ecf_vals = df["ECF"].values
     req_vals = df["R_eq"].values
     tight = (mp_vals > 0).astype(float)
-    stress = df["stress"].values
     tightening_bool = mp_vals > 0
 
     # ── 2. Figure 1: Exploratory scatter plots ────────────────────────────
@@ -147,10 +147,19 @@ def main():
         c1 = pm.Normal("c1", mu=0, sigma=2)
         c2 = pm.Normal("c2", mu=0, sigma=2)
         c3 = pm.Normal("c3", mu=0, sigma=2)
-        c_stress = pm.Normal("c_stress", mu=0, sigma=2)
+        c_stress = pm.Normal("c_stress", mu=0, sigma=5)
+        p_stress = pm.Beta("p_stress", alpha=2, beta=10)
         sigma_req = pm.HalfNormal("sigma_req", sigma=2)
-        req_mu = c1 * dr_vals + c2 * ecf_vals + c3 * rs_vals + c_stress * stress * np.abs(mp_vals)
-        pm.Normal("R_eq", mu=req_mu, sigma=sigma_req, observed=req_vals)
+        base_mu = c1 * dr_vals + c2 * ecf_vals + c3 * rs_vals
+        pm.Mixture(
+            "R_eq",
+            w=pt.stack([1 - p_stress, p_stress]),
+            comp_dists=[
+                pm.Normal.dist(mu=base_mu, sigma=sigma_req),
+                pm.Normal.dist(mu=base_mu + c_stress * np.abs(mp_vals), sigma=sigma_req),
+            ],
+            observed=req_vals,
+        )
 
     # Model C: Nonlinear
     with pm.Model() as model_nonlinear:
@@ -285,12 +294,15 @@ def main():
         "a1_tight": 1.8, "a1_ease": 0.3, "a2": 0.6,
         "b1_tight": -0.2, "b1_ease": -1.0, "b2": 0.7,
         "c1": -0.6, "c2": 0.8, "c3": 0.5, "c_stress": -5.0,
+        "p_stress": 0.159,
     }
     param_names = list(true_params.keys())
     posterior = traces["Regime"].posterior
 
-    fig, axes = plt.subplots(2, 5, figsize=(16, 5.5))
+    fig, axes = plt.subplots(2, 6, figsize=(18, 5.5))
     axes = axes.flatten()
+    for ax in axes[len(param_names):]:
+        ax.set_visible(False)
     for i, pname in enumerate(param_names):
         samples = posterior[pname].values.flatten()
         axes[i].hist(samples, bins=50, density=True, alpha=0.7, color="#2ca02c", edgecolor="none")
