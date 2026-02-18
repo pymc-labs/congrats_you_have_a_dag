@@ -1,27 +1,27 @@
 {
   "loo_ranking": [
-    "Regime",
+    "Regime switching",
     "Nonlinear",
     "Linear"
   ],
   "loo_elpd": {
-    "Regime": -3089.586783908355,
+    "Regime switching": -3089.586783908355,
     "Nonlinear": -5131.260823863609,
     "Linear": -5148.049442624189
   },
   "loo_se": {
-    "Regime": 38.733816067906666,
+    "Regime switching": 38.733816067906666,
     "Nonlinear": 77.92544662987962,
     "Linear": 79.85604757956615
   },
   "stress_pnl": {
     "Linear": 7.311566193162764,
-    "Regime": 10.057494406031019,
+    "Regime switching": 10.057494406031019,
     "Nonlinear": 7.8358967575173555
   },
   "final_cum_pnl": {
     "Linear": 21.050938124293634,
-    "Regime": 23.221565199874338,
+    "Regime switching": 23.221565199874338,
     "Nonlinear": 20.883396537145448
   },
   "n_obs": 2000,

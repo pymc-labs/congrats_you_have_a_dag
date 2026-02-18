@@ -6,7 +6,7 @@
 
 The ADIA Lab Causal Discovery Challenge demonstrated that supervised ML can classify causal roles from observational data at ~77% balanced accuracy — nearly double the ~40% achieved by classical constraint-based methods (Olivetti et al., 2024). In consequence, institutions that can generate thousands of realistic labeled simulations may hold a structural advantage in causal discovery.
 
-But recovering a DAG is only the first step that paves an exciting road ahead. At PyMC Labs we know that discovering *what* causes *what* is not the same as understanding *how*. And knowing the how
+But recovering a DAG is only the first step that paves an exciting road ahead. At PyMC Labs we know that discovering *what* causes *what* is not the same as understanding *how*.
 
 **The DAG Is the Starting Line, Not the Finish**
 
@@ -191,14 +191,14 @@ comparison = az.compare(traces, ic="loo", var_name="R_eq")
 
 ![LOO Model Comparison: Same DAG, Three Functional Forms](figures/fig2_loo_comparison.png)
 
-The result is unambiguous. The Leave-One-Out (LOO) helps us identify the right functional form! Which confirms the strength of Bayesian approach to bridge the gap between having a DAG and actually modeling the real structure of causal relations. The regime-switching model (ELPD ≈ −3 154) is separated from both alternatives (ELPD ≈ −5 070) by **~1 900 log-points — more than 24× the standard error of the difference**. This is not a marginal improvement; the data overwhelmingly prefer the model that respects the empirical asymmetry between tightening and easing. Remarkably, this advantage holds even though the regime model must *discover* the latent stress regime from data rather than being told which observations are stress events.
+The result is unambiguous. The Leave-One-Out (LOO) helps us identify the right functional form! Which confirms the strength of Bayesian approach to bridge the gap between having a DAG and actually modeling the real structure of causal relations. The regime-switching model (ELPD ≈ −3 090) is separated from both alternatives (ELPD ≈ −5 140) by **~2 050 log-points — more than 25× the standard error of the difference**. This is not a marginal improvement; the data overwhelmingly prefer the model that respects the empirical asymmetry between tightening and easing. Remarkably, this advantage holds even though the regime model must *discover* the latent stress regime from data rather than being told which observations are stress events.
 
 
 | Model | ELPD (LOO) | SE | Δ ELPD vs best |
 |---|---:|---:|---:|
-| **Regime** | **−3 154** | **39** | **0** |
-| Nonlinear | −5 058 | 79 | −1 905 |
-| Linear | −5 086 | 82 | −1 933 |
+| **Regime** | **−3 090** | **39** | **0** |
+| Nonlinear | −5 131 | 78 | −2 042 |
+| Linear | −5 148 | 80 | −2 059 |
 
 ---
 
@@ -210,7 +210,7 @@ LOO tells you which model predicts better. Posterior predictive checks tell you 
 
 All three models reproduce the bulk of the equity return distribution. The cumulative density functions (blue = posterior predictive draws, black = observed) overlap tightly in the center. But the tails diverge.
 
-The Regime switching model's x-axis extends to −10, while the Linear and Nonlinear panels barely reach −7. Only the regime-switching specification generates the left-tail mass consistent with the stress-amplified drawdowns in the data. The linear model's predictive distribution is systematically too narrow at the left extremes — precisely the events that drive risk and position-sizing decisions.
+The Regime switching model's x-axis extends to −40, while the Linear and Nonlinear panels reach about −30. Only the regime-switching specification generates the deep left-tail mass consistent with the stress-amplified drawdowns in the data. The linear model's predictive distribution is systematically too narrow at the left extremes — precisely the events that drive risk and position-sizing decisions.
 
 ---
 
@@ -222,15 +222,15 @@ A simple strategy: predict $R_{eq}$ from each model's posterior mean, go long if
 
 ![Cumulative P&L and Stress-Period Performance by Model](figures/fig4_pnl.png)
 
-**Left panel — Cumulative return**: While all models generate positive returns, the regime switching model's superior specification translates to consistently stronger performance throughout the sample. The regime switching model achieves **24.16% return vs 21.97% for the linear and 21.80% for the nonlinear models** — a meaningful edge that compounds over time. Remember: the regime model has no privileged access to the stress labels. It must *infer* the latent stress regime from data alone — yet the Bayesian mixture still provides enough structural advantage to outperform. Knowing the DAG is not enough, you need sophisticated tools to identify the real functional forms. That is precisely what PyMC can do.
+**Left panel — Cumulative return**: While all models generate positive returns, the regime switching model's superior specification translates to consistently stronger performance throughout the sample. The regime switching model achieves **23.2% return vs 21.1% for the linear and 20.9% for the nonlinear models** — a meaningful edge that compounds over time. Remember: the regime model has no privileged access to the stress labels. It must *infer* the latent stress regime from data alone — yet the Bayesian mixture still provides enough structural advantage to outperform. Knowing the DAG is not enough, you need sophisticated tools to identify the real functional forms. That is precisely what PyMC can do.
 
-**Right panel — Stress episodes only**: During the 309 stress periods, the regime switching model earns **10.22% vs 7.33% for linear and 8.11% for nonlinear** — in the episodes where amplification is highest. This advantage is especially notable because the model never observes which events are stress episodes; it discovers them through the structure of the likelihood. The Bayesian approach provides an edge precisely where it matters most: in the tail events that drive portfolio risk.
+**Right panel — Stress episodes only**: During the 309 stress periods, the regime switching model earns **10.1% vs 7.3% for linear and 7.8% for nonlinear** — in the episodes where amplification is highest. This advantage is especially notable because the model never observes which events are stress episodes; it discovers them through the structure of the likelihood. The Bayesian approach provides an edge precisely where it matters most: in the tail events that drive portfolio risk.
 
 | Model | Full-sample return | Stress-episode return |
 |---|---:|---:|
-| **Regime** | **24.16%** | **10.22%** |
-| Linear | 21.97% | 7.33% |
-| Nonlinear | 21.80% | 8.11% |
+| **Regime** | **23.2%** | **10.1%** |
+| Linear | 21.1% | 7.3% |
+| Nonlinear | 20.9% | 7.8% |
 
 The stress-episode return gap represents alpha that the Bayesian structural model extracts without ever observing the latent contagion variable. In a real portfolio, these 309 events would typically be the largest-position events — because the model has highest confidence in volatile, high-information periods. A model that can discover hidden regimes from data, rather than requiring hand-labelled indicators, is inherently more robust and deployable.
 
