@@ -26,19 +26,17 @@ We adopt their causal structure precisely because the DAG itself is uncontrovers
 
 The canonical DAG from the monetary policy transmission literature decomposes equity return responses to policy surprises into two channels:
 
-```
-Macro news (MN) ──────────────────────────────────┐
-               │                                  │
-               ▼                                  ▼
-  Monetary Policy surprise (MP_surp) ──────► Change in expected cash flows (ΔECF)  ──┐
-               │              │                                                      │
-               │              │                                                      ▼
-               │              └────────────► Change in discount rates (ΔDR) ──► Equity return (R_eq)                             
-               │                                  ▲                  ▲    ▲
-               │                                  │                  │    │
-               └──────────────────────────────────│──────────────────┘    │
-                                                  │                       │
-  Risk sentiment (RS) ────────────────────────────┴───────────────────────┘
+```mermaid
+graph LR
+    MN["Macro news (MN)"] --> MP["MP_surp"]
+    MN --> ECF["ΔECF"]
+    MP --> DR["ΔDR"]
+    MP --> ECF
+    MP --> Req["R_eq"]
+    DR --> Req
+    ECF --> Req
+    RS["Risk sentiment (RS)"] --> DR
+    RS --> Req
 ```
 
 The Monetary Policy surprise variable measures how much the Federal Reserve's interest rate decision differed from what markets expected beforehand. Bernanke & Kuttner (2005), computed it from Fed Funds futures prices in a narrow window around an FOMC announcement. The idea is simple: if the futures market was pricing a rate of 5.25% and the Fed announced 5.50%, that's a +25 basis point tightening surprise.
