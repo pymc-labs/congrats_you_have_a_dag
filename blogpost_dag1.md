@@ -14,7 +14,7 @@ To exemplify that identifying a DAG is just a first step that still leaves you f
 
 We use a well grounded causal example in the literature, by following the causal relation between policy surprises and equity returns (Bernanke & Kuttner, 2005). The example shows that knowing the DAG  still leaves open the functional form of those relationships. Is the response linear? Does it switch regimes between tightening and easing cycles? Do effects saturate at extremes?
 
-The answer matters enormously for anyone who wants to trade the insight. **Everyone with the same DAG has the same starting point — but the team that nails the functional form extracts materially more alpha. In our example, the correctly-specified regime model outperforms misspecified alternatives by ~10% in the full sample and ~25% during the most volatile episodes — a compounding edge that grows with every trade**. PyMC identifies the correct one.
+The answer matters enormously for anyone who wants to trade the insight. **Everyone with the same DAG has the same starting point — but the team that nails the functional form extracts materially more alpha. In our example, the correctly-specified regime model outperforms misspecified alternatives by ~12% in the full sample and ~35% during the most volatile episodes — a compounding edge that grows with every trade**. PyMC identifies the correct one.
 
 ---
 
@@ -179,15 +179,15 @@ comparison = az.compare(traces, ic="loo", var_name="R_eq")
 
 ![LOO Model Comparison: Same DAG, Three Functional Forms](figures/fig2_loo_comparison.png)
 
-The result is unambiguous. The Leave-One-Out (LOO) helps us identify the right functional form! Which confirms the strength of Bayesian approach to bridge the gap between having a DAG and actually modeling the real structure of causal relations. The regime-switching model (ELPD = −785) is separated from both alternatives (ELPD ≈ −1320) by **535 log-points — more than 14× the standard error of the difference**. This is not a marginal improvement; the data overwhelmingly prefer the model that respects the empirical asymmetry between tightening and easing. Remarkably, this advantage holds even though the regime model must *discover* the latent stress regime from data rather than being told which observations are stress events.
+The result is unambiguous. The Leave-One-Out (LOO) helps us identify the right functional form! Which confirms the strength of Bayesian approach to bridge the gap between having a DAG and actually modeling the real structure of causal relations. The regime-switching model (ELPD ≈ −3 151) is separated from both alternatives (ELPD ≈ −5 150) by **~2 000 log-points — more than 25× the standard error of the difference**. This is not a marginal improvement; the data overwhelmingly prefer the model that respects the empirical asymmetry between tightening and easing. Remarkably, this advantage holds even though the regime model must *discover* the latent stress regime from data rather than being told which observations are stress events.
 
-Notably, the Nonlinear (`tanh`) model performs slightly worse than even the Linear model, despite having more parameters (17.1 effective parameters vs 12.0 for Linear). The added polynomial terms and interactions cause overfitting — the model fits training data well but generalizes poorly. Smooth saturation is not the right nonlinearity here. The discount-rate channel does not gradually curve — it switches. Approximating a step change with a sigmoid wastes flexibility and gains nothing.
+Notably, the Nonlinear (`tanh`) model barely edges out the Linear model despite having more parameters (15.5 effective parameters vs 12.3 for Linear) — the added polynomial terms and interactions provide almost no benefit. Smooth saturation is not the right nonlinearity here. The discount-rate channel does not gradually curve — it switches. Approximating a step change with a sigmoid wastes flexibility and gains almost nothing.
 
 | Model | ELPD (LOO) | SE | p_loo | Δ ELPD vs best |
 |---|---:|---:|---:|---:|
-| **Regime** | **−785** | **20** | **5.8** | **0** |
-| Linear | −1320 | 40 | 12.0 | −535 |
-| Nonlinear | −1322 | 40 | 17.1 | −536 |
+| **Regime** | **−3 151** | **40** | **6.0** | **0** |
+| Nonlinear | −5 144 | 81 | 15.5 | −1 993 |
+| Linear | −5 164 | 86 | 12.3 | −2 014 |
 
 ---
 
@@ -207,23 +207,23 @@ The Regime switching model's x-axis extends to −10, while the Linear and Nonli
 
 The LOO score is a statistical number. The return is the economic consequence. It results from using the model as the basis for investment decisions.
 
-A simple strategy: predict $R_{eq}$ from each model's posterior mean, go long if the prediction is positive, short if negative, and scale position by normalized confidence. We run all three models on the full 2 000 events, then isolate the 94 stress episodes (independent contagion shock, approximately 19% of observations).
+A simple strategy: predict $R_{eq}$ from each model's posterior mean, go long if the prediction is positive, short if negative, and scale position by normalized confidence. We run all three models on the full 2 000 events, then isolate the 324 stress episodes (independent contagion shock, approximately 16% of observations).
 
 ![Cumulative P&L and Stress-Period Performance by Model](figures/fig4_pnl.png)
 
-**Left panel — Cumulative return**: While all models generate positive returns, the regime switching model's superior specification translates to consistently stronger performance throughout the sample. The regime switching model achieves **6.15% return vs 5.60% for the linear and 5.62% for the nonlinear models** — a meaningful edge that compounds over time. Remember: the regime model has no privileged access to the stress labels. It must *infer* the latent stress regime from data alone — yet the Bayesian mixture still provides enough structural advantage to outperform. Knowing the DAG is not enough, you need sophisticated tools to identify the real functional forms. That is precisely what PyMC can do.
+**Left panel — Cumulative return**: While all models generate positive returns, the regime switching model's superior specification translates to consistently stronger performance throughout the sample. The regime switching model achieves **24.49% return vs 21.85% for the linear and 21.74% for the nonlinear models** — a meaningful edge that compounds over time. Remember: the regime model has no privileged access to the stress labels. It must *infer* the latent stress regime from data alone — yet the Bayesian mixture still provides enough structural advantage to outperform. Knowing the DAG is not enough, you need sophisticated tools to identify the real functional forms. That is precisely what PyMC can do.
 
-**Right panel — Stress episodes only**: During the 94 stress periods, the regime switching model earns **3.29% vs 2.64% for linear and 2.73% for nonlinear** — in the episodes where amplification is highest. This advantage is especially notable because the model never observes which events are stress episodes; it discovers them through the structure of the likelihood. The Bayesian approach provides an edge precisely where it matters most: in the tail events that drive portfolio risk.
+**Right panel — Stress episodes only**: During the 324 stress periods, the regime switching model earns **10.79% vs 7.56% for linear and 8.21% for nonlinear** — in the episodes where amplification is highest. This advantage is especially notable because the model never observes which events are stress episodes; it discovers them through the structure of the likelihood. The Bayesian approach provides an edge precisely where it matters most: in the tail events that drive portfolio risk.
 
 | Model | Full-sample return | Stress-episode return |
 |---|---:|---:|
-| **Regime** | **6.15%** | **3.29%** |
-| Linear | 5.60% | 2.64% |
-| Nonlinear | 5.62% | 2.73% |
+| **Regime** | **24.49%** | **10.79%** |
+| Linear | 21.85% | 7.56% |
+| Nonlinear | 21.74% | 8.21% |
 
 
 
-The stress-episode return gap represents alpha that the Bayesian structural model extracts without ever observing the latent contagion variable. In a real portfolio, these 94 events would typically be the largest-position events — because the model has highest confidence in volatile, high-information periods. A model that can discover hidden regimes from data, rather than requiring hand-labelled indicators, is inherently more robust and deployable.
+The stress-episode return gap represents alpha that the Bayesian structural model extracts without ever observing the latent contagion variable. In a real portfolio, these 324 events would typically be the largest-position events — because the model has highest confidence in volatile, high-information periods. A model that can discover hidden regimes from data, rather than requiring hand-labelled indicators, is inherently more robust and deployable.
 
 ---
 
@@ -233,7 +233,7 @@ One final check: does the winning model actually recover the causal parameters?
 
 ![Regime Model: Posterior Parameter Recovery vs Ground Truth](figures/fig5_param_recovery.png)
 
-The posterior distributions are tightly centered on the ground-truth values across all 11 structural parameters — including the latent ones. The stress coefficient `c_stress` recovers the true value of −5.0 (posterior mean ≈ −4.99), and the stress probability `p_stress` recovers the true 15.9% (posterior mean ≈ 18%). The model successfully identifies both the magnitude and frequency of the unobserved contagion regime from data alone.
+The posterior distributions are tightly centered on the ground-truth values across all 11 structural parameters — including the latent ones. The stress coefficient `c_stress` recovers the true value of −5.0 (posterior mean ≈ −4.99), and the stress probability `p_stress` recovers the true 15.9% (posterior mean ≈ 16%). The model successfully identifies both the magnitude and frequency of the unobserved contagion regime from data alone.
 
 This is what a well-specified Bayesian structural model delivers: not just a prediction, but interpretable, uncertainty-quantified structural coefficients that can be audited against prior knowledge, stress-tested under regime shifts, and used to size hedges — even when key regime indicators are latent.
 
@@ -253,7 +253,7 @@ Structure is the starting line, not the finish. A DAG without a functional form 
 
 ---
 
-*Full reproducible code: `run_demo_dag1.py` · Notebook: `demo_dag1.ipynb`*
+*Full reproducible code: `demo_dag1.ipynb`*
 
 **References**
 
