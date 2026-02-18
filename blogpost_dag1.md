@@ -49,10 +49,10 @@ The remaining nodes in the graph are: **Equity return** ($R_{eq}$), the broad st
 
 The structural equations take the general form:
 
-$$\text{MP\_surp} = f_0(MN) + \varepsilon_0$$
-$$\Delta DR = f_1(\text{MP\_surp}, RS) + \varepsilon_1$$
-$$\Delta ECF = f_2(\text{MP\_surp}, MN) + \varepsilon_2$$
-$$R_{eq} = f_3(\Delta DR, \Delta ECF, RS, \text{MP\_surp}) + \varepsilon_3$$
+$$MP_{\text{surp}} = f_0(MN) + \varepsilon_0$$
+$$\Delta DR = f_1(MP_{\text{surp}}, RS) + \varepsilon_1$$
+$$\Delta ECF = f_2(MP_{\text{surp}}, MN) + \varepsilon_2$$
+$$R_{eq} = f_3(\Delta DR, \Delta ECF, RS, MP_{\text{surp}}) + \varepsilon_3$$
 
 Where the $\varepsilon$ terms correspond to random Gaussian noise terms with mean zero.
 
@@ -60,15 +60,15 @@ Where the $\varepsilon$ terms correspond to random Gaussian noise terms with mea
 
 ### Ground truth: the regime-switching Data Generation Process (DGP)
 
-In our demonstration the data is generated from a regime-switching process that embeds sharp asymmetries between monetary-policy tightening ($\text{MP\_surp} > 0$) and easing ($\text{MP\_surp} \le 0$). The explicit structural equations are:
+In our demonstration the data is generated from a regime-switching process that embeds sharp asymmetries between monetary-policy tightening ($MP_{\text{surp}} > 0$) and easing ($MP_{\text{surp}} \le 0$). The explicit structural equations are:
 
-$$\text{MP\_surp} = 0.5\;\text{MN} + 1.5\;\varepsilon_{MP}$$
+$$MP_{\text{surp}} = 0.5\;\text{MN} + 1.5\;\varepsilon_{MP}$$
 
-$$\Delta DR = \begin{cases} 1.8\;\text{MP\_surp} & \text{tightening} \\ 0.3\;\text{MP\_surp} & \text{easing} \end{cases} + 0.6\;RS + 0.7\;\varepsilon_{DR}$$
+$$\Delta DR = \begin{cases} 1.8\;MP_{\text{surp}} & \text{tightening} \\ 0.3\;MP_{\text{surp}} & \text{easing} \end{cases} + 0.6\;RS + 0.7\;\varepsilon_{DR}$$
 
-$$\Delta ECF = \begin{cases} -0.2\;\text{MP\_surp} & \text{tightening} \\ -1.0\;\text{MP\_surp} & \text{easing} \end{cases} + 0.7\;\text{MN} + 0.7\;\varepsilon_{ECF}$$
+$$\Delta ECF = \begin{cases} -0.2\;MP_{\text{surp}} & \text{tightening} \\ -1.0\;MP_{\text{surp}} & \text{easing} \end{cases} + 0.7\;\text{MN} + 0.7\;\varepsilon_{ECF}$$
 
-$$R_{eq} = -0.6\;\Delta DR + 0.8\;\Delta ECF + 0.5\;RS + \underbrace{-5.0\;\lvert\text{MP\_surp}\rvert \cdot \mathbf{1}[Z > 1]}_{\text{stress amplifier}} + 0.8\;\varepsilon_{R}$$
+$$R_{eq} = -0.6\;\Delta DR + 0.8\;\Delta ECF + 0.5\;RS + \underbrace{-5.0\;\lvert MP_{\text{surp}} \rvert \cdot \mathbf{1}[Z > 1]}_{\text{stress amplifier}} + 0.8\;\varepsilon_{R}$$
 
 where $Z \sim \mathcal{N}(0,1)$ is an independent contagion shock (unobserved), so the stress amplifier fires in roughly 16 % of observations. The key asymmetries are: tightening surprises raise discount-rate expectations **6 $\times$** more than easing lowers them ($1.8$ vs $0.3$), while easing boosts cash-flow expectations **5 $\times$** more than tightening depresses them ($1.0$ vs $0.2$). On top of these regime switches, rare stress episodes add a crash amplifier proportional to the size of the surprise. A symmetric linear model cannot capture any of these features.
 
