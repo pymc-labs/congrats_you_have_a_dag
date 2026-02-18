@@ -10,11 +10,11 @@ But recovering a DAG is only the first step. A DAG tells you *what* causes *what
 
 **Congratulations, You Have a DAG. Now What?**
 
-To exemplify that identifying a DAG is just a first step that still leaves you far away from making money, we build a simple example in which a known DAG can follow different functional forms. Each functional form generates different results, and choosing the right modeling techniques may be the difference between making and losing money. This is where PyMC can bridge the gap.
+To exemplify that identifying a DAG is just a first step that still leaves you far away from making money, we build a simple example in which a known DAG can follow different functional forms. Each functional form generates different results, and choosing the right one can be the edge that separates you from competitors trading the same insight. This is where PyMC can bridge the gap.
 
 We use a well grounded causal example in the literature, by following the causal relation between policy surprises and equity returns (Bernanke & Kuttner, 2005). The example shows that knowing the DAG  still leaves open the functional form of those relationships. Is the response linear? Does it switch regimes between tightening and easing cycles? Do effects saturate at extremes?
 
-The answer matters enormously for anyone who wants to trade the insight. **The same causal structure combined with three different functional forms produces dramatically different P&L outcomes under stress — the correctly-specified regime model doubles the returns of misspecified alternatives during the most volatile episodes**. PyMC identifies the correct one.
+The answer matters enormously for anyone who wants to trade the insight. **Everyone with the same DAG has the same starting point — but the team that nails the functional form extracts materially more alpha. In our example, the correctly-specified regime model outperforms misspecified alternatives by ~10% in the full sample and ~25% during the most volatile episodes — a compounding edge that grows with every trade**. PyMC identifies the correct one.
 
 ---
 
@@ -122,7 +122,7 @@ After generating the data, we now fit three competing PyMC models that share the
 
 **Model A — Linear**: Symmetric, proportional effects. One slope for both tightening and easing. The textbook baseline.
 
-**Model B — Regime-switching**: Mirrors the ground-truth DGP structure with separate slopes per regime for both channels. Crucially, the stress contagion indicator $\mathbf{1}[Z > 1]$ is **unobserved** — the model never sees which events are stress episodes. Instead, we treat the stress regime as a **latent variable** and marginalize it out using a `pm.Mixture`: each observation's equity return is modelled as a two-component mixture (normal vs stress), with the mixing probability $p_{\text{stress}}$ learned from data. This is a harder inference problem than using the observed label, but it is the honest one — in practice, you would not know which days are stress events.
+**Model B — Regime-switching**: A rate hike does not simply mirror a rate cut. This model allows the discount-rate and cash-flow channels to respond with different sensitivities depending on whether the surprise is a tightening or an easing. On top of that, the model accounts for rare stress episodes — think flash crashes or contagion sell-offs — where a large policy surprise hammers equity returns far more than the normal channels would predict. The key challenge: no one labels which trading days are "stress days" in advance. The model has to figure that out on its own. It does so by assuming that every observation comes from one of two regimes — normal or stress — and learning from the data how likely each regime is and how severe the stress penalty gets. PyMC makes this feasible: you describe the two-regime structure declaratively, and PyMC's inference engine works out all the parameters automatically.
 
 **Model C — Nonlinear**: Smooth `tanh` saturation in both channels with an interaction term. Captures diminishing returns but treats the asymmetry as a smooth transition rather than a discrete switch.
 
@@ -203,7 +203,7 @@ The Regime switching model's x-axis extends to −10, while the Linear and Nonli
 
 ---
 
-## Wrong Form, Right DAG, Bad P&L
+## Right Form, Right DAG, Extra Edge
 
 The LOO score is a statistical number. The return is the economic consequence. It results from using the model as the basis for investment decisions.
 
@@ -247,7 +247,7 @@ The workflow that produced these results is a five-step process that should beco
 2. **Propose competing functional forms** as PyMC models that all share the same graph.
 3. **Fit and compare** with LOO. Let the data rule out misspecified structures.
 4. **Check the tails** via posterior predictive checks — that is where misspecification hides.
-5. **Test the economic consequence** — P&L simulation, hedging, risk attribution — because the cost of the wrong form is not uniform across the distribution.
+5. **Test the economic consequence** — P&L simulation, hedging, risk attribution — because the edge from the right form is largest in the tails of the distribution.
 
 Structure is the starting line, not the finish. A DAG without a functional form is a hypothesis without a prediction. PyMC gets you from graph to quantified, decision-ready structural model.
 
