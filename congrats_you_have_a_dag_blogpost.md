@@ -4,7 +4,7 @@
 
 ---
 
-The ADIA Lab Causal Discovery Challenge demonstrated that supervised ML can classify causal roles from observational data at ~77% balanced accuracy, nearly double the ~40% achieved by classical constraint-based methods (Olivetti et al., 2024). In consequence, institutions that can generate thousands of realistic labeled simulations may hold a structural advantage in causal discovery.
+The ADIA Lab Causal Discovery Challenge demonstrated that supervised ML can classify causal roles from observational data at ~77% balanced accuracy, nearly double the ~40% achieved by classical constraint-based methods [(Olivetti et al., 2024)]([https://papers.ssrn.com/sol3/papers.cfm?abstract_id=6125566]). In consequence, institutions that can generate thousands of realistic labeled simulations may hold a structural advantage in causal discovery.
 
 But recovering a DAG is only the first step that paves an exciting road ahead. At PyMC Labs we know that discovering *what* causes *what* is not the same as understanding *how*.
 
@@ -12,7 +12,7 @@ But recovering a DAG is only the first step that paves an exciting road ahead. A
 
 To exemplify that identifying a DAG is just a first step that still leaves you far away from making money, we build a simple example in which a known DAG can follow different functional forms. Each functional form generates different results, and choosing the right one can be the edge that separates you from competitors trading the same insight. This is where PyMC can bridge the gap.
 
-We use a well grounded causal example in the literature, by following the causal relation between policy surprises and equity returns (Bernanke & Kuttner, 2005). The example shows that knowing the DAG  still leaves open the functional form of those relationships. Is the response linear? Does it switch regimes between tightening and easing cycles? Do effects saturate at extremes?
+We use a well grounded causal example in the literature, by following the causal relation between policy surprises and equity returns [(Bernanke & Kuttner, 2005)](https://onlinelibrary.wiley.com/doi/full/10.1111/j.1540-6261.2005.00760.x?casa_token=1GbELx5Ge38AAAAA%3Ao0EpckXfnkoboK-TGA5hbcNanjfsZk9qAmN9xPglaKXgF52CU9rG9dJ-AXJYAvfHUGmOgnDTrQavhEyC-A). The example shows that knowing the DAG  still leaves open the functional form of those relationships. Is the response linear? Does it switch regimes between tightening and easing cycles? Do effects saturate at extremes?
 
 The answer matters enormously for anyone who wants to trade the insight. **Everyone with the same DAG has the same starting point. The team that nails the functional form extracts materially more alpha. In our example, the correctly-specified regime model outperforms misspecified alternatives by ~10% in the full sample and up to 40% during the most volatile episodes, a compounding edge that grows with every trade**. PyMC identifies the correct one.
 
@@ -20,7 +20,7 @@ The answer matters enormously for anyone who wants to trade the insight. **Every
 
 ## The Structure: Bernanke-Kuttner Channels
 
-To illustrate the argument, we use the causal relation between Monetary Policy surprises and equity prices, based on Bernanke & Kuttner (2005).  Bernanke & Kuttner (2005) is one of the most cited studies in monetary economics. It provided the first clean causal identification of how Federal Reserve policy surprises move equity prices, using Fed Funds futures to isolate the unexpected component of rate decisions. 
+To illustrate the argument, we use the causal relation between Monetary Policy surprises and equity prices, based on Bernanke & Kuttner (2005), which is one of the most cited studies in monetary economics. It provided the first clean causal identification of how Federal Reserve policy surprises move equity prices, using Fed Funds futures to isolate the unexpected component of rate decisions. 
 
 We adopt their causal structure precisely because the DAG itself is uncontroversial: the debate is not *whether* these channels exist, but *what shape* the response functions take, which is exactly the question this post investigates.   
 
@@ -76,7 +76,9 @@ $$
 R_{eq} = -0.6\;\Delta DR + 0.8\;\Delta ECF + 0.5\;RS + \underbrace{-5.0\;\lvert MP_{\text{surp}} \rvert \cdot \mathbf{1}[Z > 1]}_{\text{stress amplifier}} + 0.8\;\varepsilon_{R}
 $$
 
-where $Z \sim \mathcal{N}(0,1)$ is an independent contagion shock (unobserved), so the stress amplifier fires in roughly 16 % of observations. The key asymmetries are: tightening surprises raise discount-rate expectations **6 $\times$** more than easing lowers them ($1.8$ vs $0.3$), while easing boosts cash-flow expectations **5 $\times$** more than tightening depresses them ($1.0$ vs $0.2$). On top of these regime switches, rare stress episodes add a crash amplifier proportional to the size of the surprise. A symmetric linear model cannot capture any of these features.
+where $Z \sim \mathcal{N}(0,1)$ is an independent contagion shock (unobserved). Because the upper tail of the standard normal beyond $z=1$ contains about 15.9 % of the probability mass ($P(Z>1) \approx 0.159$), the stress amplifier fires in roughly 16 % of observations (see figure below). The key asymmetries are: tightening surprises raise discount-rate expectations **6 $\times$** more than easing lowers them ($1.8$ vs $0.3$), while easing boosts cash-flow expectations **5 $\times$** more than tightening depresses them ($1.0$ vs $0.2$). On top of these regime switches, rare stress episodes add a crash amplifier proportional to the size of the surprise. A symmetric linear model cannot capture any of these features.
+
+![Standard normal distribution with P(Z>1) ≈ 16% shaded](figures/fig_stress_tail.png)
 
 The causal graph is agreed upon: it follows directly from Bernanke & Kuttner (2005). What remains open is the shape of $f_1, f_2, f_3$.
 
@@ -98,7 +100,7 @@ This means the exact same PyMC model serves two purposes:
 
 There is no gap between the assumed model structure and the data-generating process: they are literally the same PyMC program.
 
-The ground-truth DGP is expressed as a PyMC model with all structural equations, then fixed to the true parameter values using `pm.do()`:
+The ground-truth DGP is expressed as a PyMC model with all structural equations, then we proceed to generate the data:
 
 ```python
 # Define the full structural model as a PyMC model
@@ -138,7 +140,7 @@ A linear model forced to fit both regimes simultaneously will average across thi
 
 ## Same DAG, Three Stories
 
-After generating the data, we now fit three competing PyMC models that share the same causal graph but assume different functional forms: linear, regime-switching, and nonlinear. The goal is to show that the correctly specified model recovers the true data-generating process and translates into profitable decisions.
+After generating the data, we now fit three competing PyMC models that share the same causal graph but assume different functional forms: linear, regime-switching, and nonlinear. The goal is to show that the correctly specified model recovers the true data-generating process and translates into profitable decisions. The three models are:
 
 **Model A — Linear**: Symmetric, proportional effects. One slope for both tightening and easing. The textbook baseline.
 
@@ -185,7 +187,7 @@ with pm.Model() as model_regime:
     )
 ```
 
-The tightening indicator `tight` is a deterministic function of observable data. The stress regime, by contrast, is latent: the model must discover it from the structure of the residuals. PyMC's `Mixture` marginalizes over the discrete indicator analytically, so NUTS can sample the continuous parameters without difficulty.
+The tightening indicator `tight` is a deterministic function of observable data. The stress regime, by contrast, is latent: the model must discover it from the structure of the residuals.
 
 ---
 
