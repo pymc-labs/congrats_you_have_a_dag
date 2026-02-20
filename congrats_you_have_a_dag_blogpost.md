@@ -4,6 +4,8 @@
 
 ---
 
+Can thousands of casual simulations outperform the most sophisticated algorithms in discovering causal structures? This question is critical: it suggests that financial players capable of running these simulations will hold a structural edge over their competitors. In this post, we explore that debate and take it one step further by asking: once you’ve identified the underlying DAG (Directed Acyclic Graph, or causal diagram), is your job actually done?
+
 The ADIA Lab [Causal Discovery Challenge](https://www.linkedin.com/posts/milosmaricic_a-quant-fund-with-25000-realistic-causal-activity-7424065123251830784-jJXz?utm_source=share&utm_medium=member_desktop&rcm=ACoAACgJNhwBHD7kjRIofUo3Ml9Vv1XfzxdTtyA) demonstrated that supervised ML can classify causal roles from observational data at ~77% balanced accuracy, nearly double the ~40% achieved by classical constraint-based methods [(Olivetti et al., 2024)]([https://papers.ssrn.com/sol3/papers.cfm?abstract_id=6125566]). In consequence, institutions that can generate thousands of realistic labeled simulations may hold a structural advantage in causal discovery.
 
 But recovering a DAG is only the first step that paves an exciting road ahead. At PyMC Labs we know that discovering *what* causes *what* is not the same as understanding *how*.
