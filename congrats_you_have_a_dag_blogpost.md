@@ -104,6 +104,8 @@ This means the exact same PyMC model serves two purposes:
 
 There is no gap between the assumed model structure and the data-generating process: they are literally the same PyMC program.
 
+This generative-then-inferential workflow mirrors the causal-investing pipeline formalized by [López de Prado & Zoonekynd (2026)](https://doi.org/10.2139/ssrn.5931616): discover the causal graph, simulate interventions under competing structural hypotheses, and deploy the specification that survives falsification. PyMC's `pm.do()` operator is the practical tool that makes the intervention step possible. The code below puts this into practice.
+
 The ground-truth DGP is expressed as a PyMC model with all structural equations, then we proceed to generate the data:
 
 ```python
@@ -144,7 +146,7 @@ A linear model forced to fit both regimes simultaneously will average across thi
 
 ## Same DAG, Three Stories
 
-After generating the data, we now fit three competing PyMC models that share the same causal graph but assume different functional forms: linear, regime-switching, and nonlinear. The goal is to show that the correctly specified model recovers the true data-generating process and translates into profitable decisions. The three models are:
+After generating the data, we now fit three competing PyMC models that share the same causal graph but assume different functional forms: linear, regime-switching, and nonlinear. The goal is to show that the correctly specified model recovers the true data-generating process and translates into profitable decisions. This testing process aligns with the scientific protocol proposed by [López de Prado, Lipton & Zoonekynd (2025)](https://doi.org/10.2139/ssrn.5131050), who show that causal factor modeling is a necessary condition for investment efficiency. By fitting competing structural hypotheses to the same DAG and letting the data arbitrate, we follow precisely that logic. The three models are:
 
 **Model A — Linear**: Symmetric, proportional effects. One slope for both tightening and easing. The textbook baseline.
 
@@ -259,7 +261,7 @@ This is what a well-specified Bayesian structural model delivers: not just a pre
 
 A DAG tells you *what* causes *what*. It says nothing about *how*, and the how is where the money is. In our example, three models shared the exact same causal graph yet diverged by up to 40% in stress-episode returns because they disagreed on functional form. The regime-switching model won not by knowing more edges, but by respecting the asymmetries the data actually contain.
 
-PyMC bridges this gap: express competing structural hypotheses as probabilistic programs, let LOO and posterior predictive checks arbitrate, and walk away with uncertainty-quantified parameters you can audit, stress-test, and trade on, even when key regimes are latent. Structure is the starting line. Functional form is the finish. This is exactly the gap that [López de Prado (2023)](https://doi.org/10.1017/9781009397315) diagnoses across the factor investing literature: strategies built on associations rather than tested causal mechanisms remain vulnerable to overfitting and misspecification. Our results show that Bayesian structural modeling offers a practical path forward.
+PyMC bridges this gap: express competing structural hypotheses as probabilistic programs, let LOO and posterior predictive checks arbitrate, and walk away with uncertainty-quantified parameters you can audit, stress-test, and trade on, even when key regimes are latent. Structure is the starting line. Functional form is the finish. Our results show that Bayesian structural modeling offers a practical path forward.
 
 ---
 
@@ -270,4 +272,6 @@ PyMC bridges this gap: express competing structural hypotheses as probabilistic 
 - Bernanke, B. S., & Kuttner, K. N. (2005). What Explains the Stock Market's Reaction to Federal Reserve Policy? *Journal of Finance*, 60(4), 1221–1257.
 - Gilchrist, S., & Zakrajšek, E. (2012). Credit Spreads and Business Cycle Fluctuations. *American Economic Review*, 102(4), 1692–1720.
 - López de Prado, M. M. (2023). Causal Factor Investing: Can Factor Investing Become Scientific? *Cambridge Elements in Quantitative Finance*. Cambridge University Press. https://doi.org/10.1017/9781009397315
+- López de Prado, M. M., Lipton, A., & Zoonekynd, V. (2025). Causal Factor Analysis is a Necessary Condition for Investment Efficiency. *The Journal of Portfolio Management*, 52(1). https://doi.org/10.2139/ssrn.5131050
+- López de Prado, M. M., & Zoonekynd, V. (2026). Correcting the Factor Mirage: A Research Protocol for Causal Factor Investing. *The Journal of Portfolio Management*, 52(3). https://doi.org/10.2139/ssrn.5931616
 - Olivetti, E., Zoonekynd, V., Yam, P., Lopez de Prado, M., Imbens, G. W., & Hernán, M. A. (2024). Can AI Learn Causal Structure? 
