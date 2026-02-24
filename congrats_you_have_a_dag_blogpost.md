@@ -8,7 +8,9 @@ Can thousands of casual simulations outperform the most sophisticated algorithms
 
 The ADIA Lab [Causal Discovery Challenge](https://www.linkedin.com/posts/milosmaricic_a-quant-fund-with-25000-realistic-causal-activity-7424065123251830784-jJXz?utm_source=share&utm_medium=member_desktop&rcm=ACoAACgJNhwBHD7kjRIofUo3Ml9Vv1XfzxdTtyA) demonstrated that supervised ML can classify causal roles from observational data at ~77% balanced accuracy, nearly double the ~40% achieved by classical constraint-based methods [(Olivetti et al., 2024)]([https://papers.ssrn.com/sol3/papers.cfm?abstract_id=6125566]). In consequence, institutions that can generate thousands of realistic labeled simulations may hold a structural advantage in causal discovery.
 
-But recovering a DAG is only the first step that paves an exciting road ahead. At PyMC Labs we know that discovering *what* causes *what* is not the same as understanding *how*.
+Yet discovering the graph is only one piece of the puzzle. In [*Causal Factor Investing*](https://doi.org/10.1017/9781009397315), López de Prado (2023) argues that virtually all factor investing research stops at associational claims, never testing whether the relationships it reports reflect genuine causal mechanisms. The author makes the case that real economic value begins *after* the DAG is identified — it depends on correctly specifying, and estimating, the structural equations the graph encodes. In this post we put that argument to the test: starting from an uncontroversial DAG, we show how three different functional-form assumptions lead to materially different investment outcomes, and how PyMC lets you identify the right one.
+
+Recovering a DAG is only the first step that paves an exciting road ahead. At PyMC Labs we know that discovering *what* causes *what* is not the same as understanding *how*.
 
 **The DAG Is the Starting Line, Not the Finish**
 
@@ -257,7 +259,7 @@ This is what a well-specified Bayesian structural model delivers: not just a pre
 
 A DAG tells you *what* causes *what*. It says nothing about *how*, and the how is where the money is. In our example, three models shared the exact same causal graph yet diverged by up to 40% in stress-episode returns because they disagreed on functional form. The regime-switching model won not by knowing more edges, but by respecting the asymmetries the data actually contain.
 
-PyMC bridges this gap: express competing structural hypotheses as probabilistic programs, let LOO and posterior predictive checks arbitrate, and walk away with uncertainty-quantified parameters you can audit, stress-test, and trade on, even when key regimes are latent. Structure is the starting line. Functional form is the finish.
+PyMC bridges this gap: express competing structural hypotheses as probabilistic programs, let LOO and posterior predictive checks arbitrate, and walk away with uncertainty-quantified parameters you can audit, stress-test, and trade on, even when key regimes are latent. Structure is the starting line. Functional form is the finish. This is exactly the gap that [López de Prado (2023)](https://doi.org/10.1017/9781009397315) diagnoses across the factor investing literature: strategies built on associations rather than tested causal mechanisms remain vulnerable to overfitting and misspecification. Our results show that Bayesian structural modeling offers a practical path forward.
 
 ---
 
@@ -267,4 +269,5 @@ PyMC bridges this gap: express competing structural hypotheses as probabilistic 
 
 - Bernanke, B. S., & Kuttner, K. N. (2005). What Explains the Stock Market's Reaction to Federal Reserve Policy? *Journal of Finance*, 60(4), 1221–1257.
 - Gilchrist, S., & Zakrajšek, E. (2012). Credit Spreads and Business Cycle Fluctuations. *American Economic Review*, 102(4), 1692–1720.
+- López de Prado, M. M. (2023). Causal Factor Investing: Can Factor Investing Become Scientific? *Cambridge Elements in Quantitative Finance*. Cambridge University Press. https://doi.org/10.1017/9781009397315
 - Olivetti, E., Zoonekynd, V., Yam, P., Lopez de Prado, M., Imbens, G. W., & Hernán, M. A. (2024). Can AI Learn Causal Structure? 
