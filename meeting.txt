@@ -1,0 +1,391 @@
+causal fin check in - February 5, 2026
+https://app.bluedothq.com/preview/698479ec4a3c1f135a6f5bbf
+
+---
+
+0:00 - Camilo Saldarriaga
+Just. Hello. 
+
+0:01 - Francesco Muia
+Hello. 
+
+0:03 - Alexander Fengler
+Did you see the, this LinkedIn post that Thomas was referring to? 
+
+0:12 - Ben Vincent
+Yeah, I mean, I had a quick scan. So from what I can understand, there was a causal discovery competition and the one that won used some kind of method of. I think it basically created a massive data set where the kind of true causal DAG was known. And then you simulate, what do you observe? And then they just did. I don't know what method they used, but can you infer the true DAG given the nature of the data set? 
+
+0:53 - Alexander Fengler
+Yeah. So I guess when we hear causal, we get excited. Hey, this is adjacent enough to labs that this can be used for marketing purposes. 
+
+1:03 - Camilo Saldarriaga
+Of course. 
+
+1:03 - Alexander Fengler
+But yeah, the first filtering question is that actually all the causal PI, etc, this kind of, let's say build a probabilistic programming and then do stuff with it infrastructure is not really geared very much towards causal discovery. It's more geared towards starting with a graph and then doing analysis on top. 
+
+1:28 - Francesco Muia
+Right. 
+
+1:29 - Ben Vincent
+Yeah, I mean, I'd actually say kind of like doing myself out of a job here, but so the, the world of causal stuff is so large. I personally have pretty much ignored causal discovery just to kind of thin it down a bit. And yeah, causal PI doesn't do that. But then I think even further causal PI kind of focuses in on a particular subset of causal problems. So there are these kind of stereotypical kind of situations that come up often in, in real world quasi experiments. So it's not even just here's a generic dag, do something with it. I would put that more in the category of can PMC do something with that? Absolutely, yes. But at the moment causal PI isn't really set up to just kind of do something with an arbitrary dagger. 
+
+2:38 - Alexander Fengler
+Mm. 
+
+2:41 - Francesco Muia
+So what, what are the constraints in terms of the, the diagram that can be used with the causal PI? I mean, just understand whether like the problems that we have in mind or. 
+
+2:57 - Ben Vincent
+Yeah, so it's more. I think it's. I think there's an approach issue. So it's not that we just pick like a subset of dags and deal with those, it's a bit more like we consider a set of real situations that happen in the world. So broadly speaking, you know, if there are cross sectional situations and there are kind of panel data type situations, and within those there are lots of kind of variations on a theme of kind of how does the world work. So for example, if you're dealing with a situation where you just have like one observed unit, let's say you're doing some kind of media Mixed model and it's purely at the national level. So you've got a single time series of sales over time and you know there was an intervention made at some point and so given those that situation you then say aha. Interrupted time series is the tool for that. So in, in one way it's analogous to the kind of old school way of thinking about stats where all the kind of undergraduates hate this kind of thing of how do I know whether to pick a T test or an ancover or what. So it's a bit like that in that we just target specific situations and then there are kind of published methods or general approaches that you can use. 
+
+4:53 - Alexander Fengler
+So. 
+
+4:55 - Ben Vincent
+That'S kind of just a little bit orthogonal to the issue of what dags can we deal with. I mean I, I, you could probably like map them on. And I, I've tried in the knowledge base page, I've tried, I've got a page which kind of lists the DAG structures that correspond to some of the different things. I'll go and, I'll go and find it. But it, it's, we don't kind of take a Pearlian structural causal model first approach, but that doesn't matter. Like we can as PMC labs, we can just use PMC. 
+
+5:49 - Francesco Muia
+From scratch. 
+
+5:50 - Camilo Saldarriaga
+Same. 
+
+5:51 - Ben Vincent
+Yeah, yeah. So I mean I, I've done, there's no reason. Yeah, yeah. Given a dag, you can just kind of write that in pmc. And I mean, I guess this is, I was a bit fuzzy about what the exact remit of this was, but I think kind of Thomas saw this opportunity for kind of some kind of engagement. So yeah, I, I'm less clear on the kind of causal discovery part, but definitely not like an expert, but I can kind of input into kind of. Okay, now you've got your dag, what do we do? I'm just dropping the link into the chat. 
+
+6:55 - Camilo Saldarriaga
+Maybe I have a couple of thoughts. Very like, I really think the claim the guy makes in the post is, it is a little bit bold, like he's stretching the conclusions from the study like to the financial domain, claiming that that proves that a fund with the simulations will outperform one with a good strategy. But I think that in a certain way has been said what they are doing is more like issue of the domain of PYMC in general and we can try and replicate something there. The only problem, which is actually a critique they had is that in real financial data you don't have like ground truth of DAX or like the causal relations to train the Whole thing. Right. Which is what they did. So that's like one of the issues, I think maybe two questions. How can we link this actually to finance like real financial data? And how can we overcome the lack of real ground truths on the causal relations? But these are just like loose thoughts. 
+
+8:18 - Ben Vincent
+Yeah, I mean very high level. My kind of approach would be if you have some medical system that can produce candidate dags based on kind of observational data, then you've got two directions that you can go in. One would be the structural causal modeling approach where you literally say, okay, how can we build this in pymc? Now the provided DAG structure is very useful. You can draw your DAG and you know what's related to what. But I don't know if the output of that says anything about what's the functional relationship between those variables. And that of course is key. You need that in PYMC models as well as kind of priors over things. So yeah, that's one kind of direction you can go down where it's only really just the start of a structural causal model. It's the structure part but not the functional relationship part. So then I guess you would come along with your domain knowledge of saying, okay, well if interest rate expectations affect investing behavior, then I'm just, this is the relationship, the functional relationship that I am going to put on there. The other direction you could go down would be the more regression adjustment set approach where you could say okay, I've got my DAG and now I'm going to kind of laser focus on the question of what's the causal relationship between X and Y. And the kind of adjustment set approach basically says given your dag, in order to identify this causal relationship you, you need to condition upon these variables and not on those variables. So in some way they're both, they're not the same. The first one is a little bit more pymc like because we're used to like building out the full structural causal model. The other one is a little bit more like I'm kind of massively oversimplifying. But the other one is a bit more like I'm a reformed statistician and I know how to do regressions, but now I know about dags and causality, I know what variables to include or not include. Um, so I don't know that. I guess the inspiration there, the thought is congratulations, you've got a dag, but that doesn't, that doesn't make you money. Like you need something more. 
+
+11:42 - Alexander Fengler
+Is there a framing here that allows Something like exactly this, like, congratulations, you have a, you have a DAG that doesn't yet make you money. But here's a way to bootstrap a process that gets you towards something that is more informed, that utilizes pymc. Is there like a toy example version of that that one could showcase? Actually if we do it on synthetic data, that might even be even simpler, cleaner. 
+
+12:17 - Camilo Saldarriaga
+Right. 
+
+12:18 - Alexander Fengler
+Because we can show that it works if we have some control over the data generating process. 
+
+12:24 - Ben Vincent
+Yeah. So my gut feeling, and again I've not, maybe there's like a paper that goes along with this and I've not read it, but I think it would be a bit weird if this process spits out like one DAG says, this is it. 
+
+12:43 - Francesco Muia
+Right, Right. 
+
+12:44 - Camilo Saldarriaga
+Yeah. 
+
+12:45 - Ben Vincent
+Anyone kind of taking that approach with high stakes decisions would kind of ask questions. So presumably you actually have like a candidate series of like here are my top five ten dags. 
+
+13:00 - Camilo Saldarriaga
+Yeah. 
+
+13:01 - Ben Vincent
+So I guess that narrows it down. You could then go down each root, so take each of them and then take either the structural causal model or the regression adjustment approach to say like, well, if conditional upon this being, this DAG being true, then these are predictions I'm making about the causal influence. So I, I guess like the only real test is so from a standard kind of machine learning kind of approach, you would do like which one fits the data best. 
+
+13:49 - Alexander Fengler
+Yeah. And then future, future data arrives. Right. So you, you can, you make hypothesis and future data should like serve to, to weed out. 
+
+13:57 - Ben Vincent
+Right, yeah, that, that is the, the key thing. So I was kind of setting up kind of in sample model fits as like a straw man of that, that if you optimize that then you will have a good predictive model, but not necessarily a good causal model. So I mean, I've been asked this by clients, you know, that we, we spend a lot of time with them building up an mmm and we kind of say like this is the causal structure, we do only have like one of them. So but then they rightly ask like, well how do we know? Like how much faith should we in these forecasts? And equally they will say, well if we impose this causal structure, our in sample model fits decrease. And that shouldn't be a problem. If your goal is understanding the causal structure, you should be okay with kind of losing a little bit of predictive power in order to gain real causal insight. Because the test of it, like you say would be the model which is closer to the true data generating process should presumably be superior on out of sample prediction. 
+
+15:23 - Francesco Muia
+Yeah, exactly. So isn't kind of an overfit. 
+
+15:31 - Camilo Saldarriaga
+Right. 
+
+15:32 - Francesco Muia
+So they were overfitting. If imposing like the right model reduces the ensample. 
+
+15:42 - Alexander Fengler
+Out of sample prediction. 
+
+15:44 - Ben Vincent
+Yeah, yeah, I've not quite thought of the right language right in my mind or how to kind of relate that overfitting term to DAGs, because random machine learning models don't assume a DAG as such. 
+
+16:04 - Francesco Muia
+Okay, sorry, I'm. I'm new to the, to the field, so I may ask naive questions. 
+
+16:11 - Ben Vincent
+No, no, these are great. 
+
+16:13 - Francesco Muia
+Yeah, I didn't understand how to overcome the point that Camilo was trac. So say that we take financial data from public financial data and we want to like have the full pipeline. No, you want to do first causal discovery, have a list of candidate graphs and then work on them to understand like what you do basically with the causal PI, et cetera. So what will be the standard algorithm to get this like five top candidates graphs with which we can work and develop the second part that is not clear to me unless you have like the ground truth where you can use some supervised learning approach, as they were doing. But if you don't have that, what's the. A standard way of approaching the broker? 
+
+17:19 - Camilo Saldarriaga
+I think that what I think Alex suggested that it's the road we can take is actually we shouldn't use real financial data. Like we can just like them generate stuff. We can like discover some dax, like use a mechanism to discover the dax, but we won't have the actual functional structure. And that gives us a first catch. It's like, hey guys, congrats, you have a dag, but if you don't have the functional structure, you won't be able to make money out of this. And we can even simulate a couple of approaches in which you invest or do something without knowing the functional structure and you will have a bad result. And then we can try a couple of PYMC methods in which we infer that actual structure and well cross our fingers and hope it's going to be better than. 
+
+18:17 - Francesco Muia
+Oh sure, sure. So with synthetic data is more clear. I was wondering how it works. Like if you don't have. That would be like the standard approach. 
+
+18:29 - Camilo Saldarriaga
+The biggest critique to the paper actually is like, okay guys, this is pretty simple if you give the like the truth. But actually one guy commented it on the post, but yeah, I don't have an answer for like that case. If someone has it, that would be awesome. 
+
+18:52 - Ben Vincent
+So if we're talking about the goal of this or like Thomas's intention, it sounded a bit like, let's Just create some publicity. And I guess then the, the question is, do we do that with kind of words and like keep it high level or do we go down the simulation route and make it kind of technical? So I think a little bit premature to kind of decide which. But I think the basic idea of Congratulations. Now what is like an interesting one, a very kind of small example that I think is kind of handy is if you think about moderation. So just like having an interaction term or from a more kind of causal framework, you'd say, okay, A causally influences B, but the degree of causal influence or the nature of the causal influence is modified by C or something. And you know, you could just do that with a simple interaction. But there is no way to visibly tell whether you, you don't Express interactions in DAGs. You just have like A B causes C. Some people will come along and put an A times B node in there to kind of make it more explicit, but very often you don't. And I guess in a causal discovery perspective that would be kind of crazy because then you've got all these possible interaction nodes and you're like, okay, would now you've made your discovery task infinitely more difficult. So maybe I'm just completely kind of freewheeling, but maybe, yeah, the idea is having a DAG is kind of good, but that's not the end. There's a lot more work that needs to be done. 
+
+21:23 - Alexander Fengler
+Is there maybe some sort of canonical graph you could show that it's like how much of the labor you have achieved with these different steps. At some Y axis value you'll actually have money or whatever and you have your, like, you have your graph discovered. Right. How far away are you from the money? And then the sort of like layout steps and where PMC enters to get you from there to money. Right? 
+
+21:51 - Ben Vincent
+Yeah. So let me, I mean I'm, I don't have much kind of finance background other than just like personal investing. And I mean I read a lot. 
+
+22:03 - Alexander Fengler
+About modern money and becoming rich of it. 
+
+22:05 - Ben Vincent
+Right. And. 
+
+22:08 - Francesco Muia
+So. 
+
+22:11 - Ben Vincent
+But, but from, from, let's say you've got a really good predictive model using XG Boost, whatever, or you've got someone doing like a causal model if your goal is kind of. Sorry, I just try and formulate my thoughts. So good predictive models are going to be useful and profitable, presumably in the short term where you're kind of working in the same regime and no kind of crazy intervention has happened. But over the longer term, and you know, maybe that's days or weeks, Maybe there's like a Fed interest rate change. So that's an intervention in the system. And your purely predictive model might not have discovered some like representation of the true data generating process and therefore make bad decisions. So the, the how do you make money? You as an investor can't necessarily intervene. You know, you can't change, set interest rate policy, but other people will. Things will happen, people will, people will go out of business, policy will change. So I guess the idea is having a proper causal model maybe becomes more important on longer time scales. 
+
+23:56 - Alexander Fengler
+And even, I mean it's in that lingo. 
+
+24:01 - Camilo Saldarriaga
+You. 
+
+24:02 - Alexander Fengler
+Know, when the regime changes that may just imply that the DAC actually also changes. Right. It's quite possible. So there's a, like having a few solid DAX to choose from and then having some sort of like idea over which one applies in the current regime. That's also valuable. Right. Also from a communication perspective, I guess if you have somewhat simplified dax, these lend themselves very well to explaining what a model is doing. Right? 
+
+24:31 - Camilo Saldarriaga
+Yeah. 
+
+24:31 - Francesco Muia
+Question this. I would have thought that like you have a single dag, say to simplify and that describes this kind of one time events that happen and modify the regime. So while you, Alex, you're saying you have multiple ducks, each of which is valid and separated and like you have a phase transition from one DAG to the other. What is the like the, the best description of, of this? Exactly what you suggested then like interest rate changes. So things happen and yeah, you have to adapt. 
+
+25:18 - Ben Vincent
+So for something like interest rate changes, I think that you could, the desire would be to capture that in one model just with the functional relationships. But I mean something that may or may not be happening is maybe we're sweatshirts, maybe we've been in a Bretton woods kind of system, dollar reserve currency. And now we're like potentially not doing that. Maybe we're going into like a global reserve currency regime so that. Good luck. Like trying to extrapolate when you've totally changed the, the system. 
+
+26:05 - Alexander Fengler
+That's the, the. One of the issues with that example is that you are changing a node in the DAC that previously was just held completely constant. Right. So there's more or less no way for you to know, right? 
+
+26:21 - Ben Vincent
+Yeah, I mean I guess what we're talking about is the difference between things changing like the value of a node changing over time and that's okay. Or we're talking about the actual like data generating process completely changing. 
+
+26:42 - Alexander Fengler
+Yeah. 
+
+26:44 - Ben Vincent
+So maybe. Yeah, I mean we've already kind of brainstormed a handful of Things. So. So maybe a kind of speediness of getting some publicity. Maybe it could just be a. A thought piece of. Yeah. Just off the top of my head, we definitely want one dag. Like how. How can you really differentiate if you've got any kind of reasonably complicated model? Like how are you really going to be able to kind of differentiate like the top five based on kind of limited data when you've got these dags or you've got. Is the structural component, you don't have the functional relationships. How do you actually use that? Because the DAG alone won't tell you. I get. I guess. Yeah, I guess if I was like an active investor, knowing the DAG would presumably mean that I pay attention to certain things and not other things. 
+
+28:01 - Alexander Fengler
+Yeah. 
+
+28:02 - Ben Vincent
+So maybe you could do like a rapid responses based on like news or like policy changes. More accurate predictions of what the consequences of those things will be. 
+
+28:22 - Francesco Muia
+If at some point. So what I was discussing earlier with Alex, if at some point we want to put real work into this, we could like select one type of events, I don't know, rating changes or interest rate changes or company defaults, these kind of things, just one type and try to extract as much information from that. That would be a nice way to write like block post or something like that. Nice topic. But now you're suggesting that we don't do the work first we just write down something with the general idea and put it out just to get some publicity and then we can think about working on it. 
+
+29:13 - Alexander Fengler
+For real. 
+
+29:15 - Ben Vincent
+I could be wrong, but my, my perception from what Thomas posted was that he kind of saw this kind of interesting thing. The guy has kind of lots of followers. It touches on kind of core competence and we maybe want to generate some buzz amongst clients who are not like media mix modelers. And so rather than like creating a new product or doing some like deep technical work, maybe just kind of brainstorming and putting out a think piece on okay, what next? Like what? And I guess the goal ultimately is upper funnel work of you need us to solve your problem. I guess otherwise it's just fun, I guess. 
+
+30:16 - Francesco Muia
+Yeah, I see. Okay, makes sense. 
+
+30:19 - Camilo Saldarriaga
+I think we can. I don't know because I understood that Thomas, because he said like, how can we create our own version of the study? So I think he had in mind some more technical work. We can just put in the table both options and see which fits better purpose. If we are going to do the high work, like the deeper one, maybe one idea based on what we discuss is that we can actually show that if we have, we can have one ground truth. Create some simulated data from one ground truth of Cashel dac, but with several functional forms. I don't know, N different functional forms and we can do some work to discover the actual dag. And we say, okay, yeah, you have the dag, congratulations. But depending on which functional form you're going to have these results. And we apply some PYMC methods to actually extract the closest possible right functional form and show how that performs. That wouldn't be I think so much work and we will keep it in the world of like generated data, but we can show like real value. And based on the idea that Ben proposed, like, well, you have a dag. Congratulations. Now what we showed that even if you have the dag, you can actually lose money if you don't infer the actual functional form. I don't know, that's like something I can write some like idea or some one pager concept notes on that front, if you agree. 
+
+32:07 - Ben Vincent
+Yeah, sounds cool. Probably a good idea to just kind of take a summary of our ideas and run it past Thomas because I guess he's got the, some kind of some vision in mind. So regardless, I think we, we want to make sure that we're pointed in the right direction. But I, I do like that idea because it's, it makes it a little bit more concrete. Yeah, I really like the idea of same dag, different functional forms. You do DAG reconstruction and then show, oh, depending on the functional form I may be misled and recover the wrong one. I mean in one, in some ways it sounds like a mini research paper, but I guess we have LLMs. 
+
+33:14 - Alexander Fengler
+I mean if you have full control over the environment, it should make it a lot more tractable than any type of freeform approach to this issue. Like for example, if you actually tried to use your WHO data and then you're trying to play around with discovering graphs, well, we may never make money. So then what's the good example here? Right, so that should be okay. There's one other angle in this blog post. I just wanted to mention this. So let me just quote. Or I could share. Let me just quote the sentence here. The competitive advantage and causal inference. Because there's this wrinkle, right? Like they're using labeled DAX to train the model, right? But then eventually they are actually going and testing on a new graph, right? And basically the idea is that the model identifies the sort of underlying patterns behind these causal relations and then can be deployed outside. So it's kind of as Far as I understand, the core idea actually has something to do with anchoring your training data on simulation data, but then taking the thing outside because you start trusting that the patterns actually have been picked up. Right. So you could, I mean, I guess the workflow that they would use here is that you would actually learn. You take the learned DAG classifier, let's say node classifier, really. 
+
+34:50 - Camilo Saldarriaga
+Right. 
+
+34:52 - Alexander Fengler
+And just bring that with you to your applied problem. And it's kind of like a foundation model idea to an extent. 
+
+35:00 - Ben Vincent
+Right. 
+
+35:01 - Alexander Fengler
+And the sentence he says is that, I mean the implication. Right. Quote unquote, competitive advantage and causal inference is moving from methodology to infrastructure. The question for leadership isn't which algorithm, it's who can generate the most realistic labeled simulations in our domain. And I just wanted to ask you for your reaction to the couple sentences, Ben and I wanted to mention that this opens up another angle for PYMC as the simulation engine. Right. Which is also a low hanging fruit to communicate. 
+
+35:37 - Ben Vincent
+I think that's an excellent idea because as you were kind of saying that I was thinking if you're generating data based off of a dag, there must be assumptions about the relationships, the functional relationships, and if that's based purely on, you know, these things are just linear, then that's not going to capture the complexity of the real world. Maybe there are, you know, temporal lags and non linearities and all sorts. 
+
+36:13 - Alexander Fengler
+So arguably PMC would, would provide a very natural language for developing a very large variety of such simulators. Right. 
+
+36:24 - Ben Vincent
+Yeah. The more I think about it, the more so I would say that what you just suggested would be very compelling and possibly forms like a second or an additional approach. So it doesn't necessarily like supersede or replace what we were talking about before. 
+
+36:46 - Alexander Fengler
+Yeah, right. It's a different angle. Yeah. 
+
+36:48 - Ben Vincent
+But I'm still very excited about it because it, the first one is a little bit. So it's nice, it's kind of reality check and you're not done and maybe you need us or work. But it has a slight kind of confrontational tone to it. Yeah, but yours is like, okay, let's say that's true. How are you going to generate the data? 
+
+37:21 - Alexander Fengler
+Yeah, yeah. 
+
+37:22 - Ben Vincent
+And I mean someone could say, well, I'm going to use numpy and like. Yeah, yeah, okay, you could, but we already have blog posts, maybe written by Ricardo and maybe Tommy, I think. 
+
+37:39 - Alexander Fengler
+Yeah, exactly. Yeah, yeah, yeah. 
+
+37:41 - Ben Vincent
+Using, yeah. Simple forward simulation. 
+
+37:44 - Alexander Fengler
+Yeah. So maybe that's something that we can. Maybe it's really the lowest, lowest hanging fruit Right. To write some sort of response post on LinkedIn that sort of just positively showcases that if you think this is a cool idea, then we have some cool tools for you to explore it further. 
+
+38:05 - Ben Vincent
+Right. 
+
+38:07 - Alexander Fengler
+Without even questioning how far you've gotten with your little competition. 
+
+38:13 - Ben Vincent
+Yeah, yeah. I really like that. It's, it's positive. It's kind of upper funnel in that it kind of brings people into the Pipsey ecosystem. 
+
+38:29 - Alexander Fengler
+Yeah. 
+
+38:31 - Ben Vincent
+And. And it creates awareness amongst that kind of financial group. Yeah, yeah. 
+
+38:39 - Alexander Fengler
+There is this. I'm not sure if it's the right keyword. Sorry, Camilo. I started talking, then I saw your hand. I'll return back to you. I'm not sure which repo is pushing that agenda right now, but I remember that people were. I think it was PMC marketing pushing towards model components that are sort of composable. Another keyword, there is this sub model idea that could really be used as a vehicle here for structured variations on the stacks. So there's even a certain, like, hey, this is like fits an ongoing agenda we have. Maybe it's already sitting there in PMC extras. Right. I'm not sure. Now I'm saying this from memory. 
+
+39:24 - Ben Vincent
+Do you mean the kind of composable. 
+
+39:28 - Alexander Fengler
+Yeah, like you have like, you know, some regression component here, put some other component here, maybe some pre configured non linearities or whatever with certain prior choices. So you can start like stitching slightly higher level components together which you know, lends itself to building these structured simulators. 
+
+39:47 - Ben Vincent
+Yeah, that's nice. I know that Luciano has been doing work on that within the kind of Bane thing, but I, I think that. 
+
+39:56 - Alexander Fengler
+There were outside the, the core reports just for Bane or. 
+
+40:01 - Ben Vincent
+I think that. So I think that he first did it for Bane, but I think that he's had a parallel effort where he's trying to extract the kind of core elements of that and make that open source to make sure that we have ip. But I don't know, we'd have to ask him. 
+
+40:24 - Alexander Fengler
+Yeah, let's just ask him basically and see where. If he's also still excited about it. Maybe that's always. That's just a little bit of a determinator of whether it will progress. 
+
+40:34 - Ben Vincent
+My guess is that that's the kind of stuff that he loves. 
+
+40:39 - Alexander Fengler
+Okay. Camilo. 
+
+40:40 - Camilo Saldarriaga
+You know, just. I really love the idea. I think it's even better than the initial approach that we had. Just that it will be good if we can showcase something not just like the argument, even if it's like some reproduction of an old blog post example or something. If we can showcase some process that will give it. 
+
+41:02 - Alexander Fengler
+We could literally take one of their DAX that they have in the paper without arbitrary functional form. You could just say this is what it would look like in pmc. You can forward simulate that. Your entire competition could have been designed via pmc. I don't know what they used, but they hand coded it anyways. 
+
+41:23 - Ben Vincent
+I think that playing up the fact that the models can be kind of compiled to different backends to maybe run on different hardware is kind of nice. Because if that idea, the kind of core proposal of generate, train, reconstruct, if that's kind of, if financial institutions buy into that and they throw money and compute at it, then they'll want, they'll want to be able to execute it on fast hardware, I guess like write. 
+
+42:02 - Alexander Fengler
+It and write it in something that isn't going to be obsolete too quickly. 
+
+42:06 - Ben Vincent
+Yeah, yeah. So, yeah, so the, the pmc as kind of a high level API becomes a real strength there. 
+
+42:19 - Alexander Fengler
+Okay, cool. 
+
+42:20 - Francesco Muia
+I mean now we move in this, should we move in the, into these two like parallel directions at the same time? Maybe we can create a couple of Google Docs and start working on putting down ideas and then iterating on those. What do you think? 
+
+42:41 - Ben Vincent
+What do people think about doing that then taking the results to Thomas versus Because if we took these core ideas now, he might say put all of your chips on the kind of Alex's idea. Don't bother about the other one. 
+
+43:01 - Alexander Fengler
+Yeah. 
+
+43:02 - Ben Vincent
+What do you think about at what point do we check in with Thomas? 
+
+43:10 - Alexander Fengler
+I think the determining factor is the ambition of the initial effort. Because if we just try to write a response on LinkedIn, we could do that with literally just drawing on our understanding of the capabilities of PMC without doing anything about it. More effort could follow after. Or you think like we shouldn't like somehow directly react to that guy's post and just put an independent effort and the timeline is different and it is less relevant whether or not to run the idea immediately by Thomas. 
+
+43:49 - Ben Vincent
+Yeah, I mean, I think we've got two ideas which we can formulate succinctly and concretely and maybe, maybe be guided by Thomas's kind of agenda, you know, so it might save time if, if he's just not bothered about one of them, then, then we could maybe save some time. 
+
+44:17 - Camilo Saldarriaga
+Okay. 
+
+44:17 - Ben Vincent
+But equally I can see how it's appealing to get something like more formulated and say, here you go, I can see both approaches. 
+
+44:29 - Camilo Saldarriaga
+If you agree, I can send you in a couple of minutes a summary of Both ideas. You can give them a check, provide some feedback, and we can send them to Thomas to see which one does he prefer. We can even recommend to go with the second one. I think that's the most powerful one. Like, do that recommendation and receive the feedback what he believes is better. 
+
+44:55 - Ben Vincent
+Yeah, that sounds good. 
+
+44:59 - Camilo Saldarriaga
+Okay, I will send you that in a couple of minutes. 
+
+45:03 - Ben Vincent
+Cool. Yeah, Blue Dot's pretty awesome for doing that. 
+
+45:07 - Camilo Saldarriaga
+Yes, indeed. 
+
+45:09 - Francesco Muia
+Just basically the summary. 
+
+45:12 - Ben Vincent
+I. I've started to wish that kind of more aspects of my life were recorded in text so that I can just get my agents to do it. 
+
+45:24 - Francesco Muia
+Though I must say that lots of Gemini works quite well. We are not using Gemini right now, but, yeah, I've tried. Yeah, it's very, very useful. 
+
+45:39 - Camilo Saldarriaga
+It's actually interesting that the traffic on ChatGPT has been decreasing consistently and the traffic on Gemini has been growing at an incredibly pace. Yeah, it's quite interesting precisely because of what Francesco said. It's very good. Yeah. 
+
+45:56 - Francesco Muia
+And also it's integrated Google Meet. Right. So very easy to. 
+
+46:03 - Camilo Saldarriaga
+Do that. 
+
+46:03 - Alexander Fengler
+I think we are just a bit locked into Blue Dot because of the legacy of the recordings at Labs at this point. 
+
+46:09 - Francesco Muia
+Yeah, yeah. 
+
+46:11 - Alexander Fengler
+Maybe via like some smart database approach, one could pivot. Pivot. But maybe not the highest priority. That's probably the main reason. Right. I also think at this point, Gemini is. I mean, I'm not. I don't know all features of Blue Dot, to say it in an exhaustive way, but I think feature parity is pretty much there. 
+
+46:29 - Francesco Muia
+Yeah. 
+
+46:32 - Camilo Saldarriaga
+Cool. 
+
+46:32 - Alexander Fengler
+All right, thanks. Yeah. To have your causal anchor here so that we don't get too crazy. 
+
+46:42 - Camilo Saldarriaga
+Cool. 
+
+46:42 - Ben Vincent
+No, it's a good, good chat. Yeah. I'll just keep an eye on the channel. 
+
+46:50 - Camilo Saldarriaga
+Cool. 

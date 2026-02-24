@@ -1,16 +1,10 @@
 [project]
-name = "congrats-you-have-a-dag"
+name = "dags-adia-lab-workshop"
 version = "0.1.0"
-description = "Demo: Why causal structure alone is insufficient - PyMC bridges the gap"
+description = "DAG blogpost demo: Monetary Policy Surprises and Equity Returns"
 authors = ["PyMC Labs"]
 channels = ["conda-forge"]
 platforms = ["win-64", "linux-64", "osx-64", "osx-arm64"]
-
-[tasks]
-lab = "jupyter lab"
-notebook = "jupyter lab notebooks/demo.ipynb"
-test = "pytest tests/ -v"
-lint = "pre-commit run --all-files"
 
 [dependencies]
 python = ">=3.11,<3.13"
@@ -24,13 +18,8 @@ jupyterlab = ">=4.0"
 ipykernel = ">=6.28"
 scipy = ">=1.12"
 xarray = ">=2024.1"
+graphviz = ">=14.1.2,<15"
 
-[feature.dev.dependencies]
-pytest = ">=8.0"
-pre-commit = ">=3.6"
-ruff = ">=0.2"
-mypy = ">=1.8"
-
-[environments]
-default = { features = [], solve-group = "default" }
-dev = { features = ["dev"], solve-group = "default" }
+[tasks]
+lab = "jupyter lab"
+run-demo = "python run_demo_dag1.py"

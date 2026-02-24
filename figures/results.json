@@ -1,0 +1,29 @@
+{
+  "loo_ranking": [
+    "Regime switching",
+    "Nonlinear",
+    "Linear"
+  ],
+  "loo_elpd": {
+    "Regime switching": -3153.6344192438137,
+    "Nonlinear": -5058.2445885762645,
+    "Linear": -5086.445738816338
+  },
+  "loo_se": {
+    "Regime switching": 39.15513927452418,
+    "Nonlinear": 79.31405427013026,
+    "Linear": 82.2355937049425
+  },
+  "stress_pnl": {
+    "Linear": 7.329508871314024,
+    "Regime switching": 10.219636236874834,
+    "Nonlinear": 8.113012591160851
+  },
+  "final_cum_pnl": {
+    "Linear": 21.973083065112544,
+    "Regime switching": 24.163875789726692,
+    "Nonlinear": 21.802803314858416
+  },
+  "n_obs": 2000,
+  "n_stress": 309
+}
