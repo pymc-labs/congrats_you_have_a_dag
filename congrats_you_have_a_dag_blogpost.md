@@ -30,20 +30,9 @@ We adopt their causal structure precisely because the DAG itself is uncontrovers
 
 The canonical DAG from the monetary policy transmission literature decomposes equity return responses to policy surprises into two channels:
 
-```mermaid
-graph LR
-    MN["Macro news (MN)"] --> MP["MP_surp"]
-    MN --> ECF["ΔECF"]
-    MP --> DR["ΔDR"]
-    MP --> ECF
-    MP --> Req["R_eq"]
-    DR --> Req
-    ECF --> Req
-    RS["Risk sentiment (RS)"] --> DR
-    RS --> Req
-```
+![Standard normal distribution with P(Z>1) ≈ 16% shaded](figures/canonical_dag.png)
 
-The Monetary Policy surprise variable measures how much the Federal Reserve's interest rate decision differed from what markets expected beforehand. Bernanke & Kuttner (2005) computed it from Fed Funds futures prices in a narrow window around an Federal Open Market Committee (FOMC) announcement. The idea is simple: if the futures market was pricing a rate of 5.25% and the Fed announced 5.50%, that's a +25 basis point tightening surprise.
+The Monetary Policy (MP) surprise variable measures how much the Federal Reserve's interest rate decision differed from what markets expected beforehand. Bernanke & Kuttner (2005) computed it from Fed Funds futures prices in a narrow window around an Federal Open Market Committee (FOMC) announcement. The idea is simple: if the futures market was pricing a rate of 5.25% and the Fed announced 5.50%, that's a +25 basis point tightening surprise.
 
 The Monetary policy surprises have a negative impact on the change in expected cash flows as they represent higher than expected borrowing costs for the economy. The effect of the MP surprises on the change in discount rates is positive, and they negatively affect equity prices.
 
@@ -52,8 +41,11 @@ The remaining nodes in the graph are: **Equity return** ($R_{eq}$), the broad st
 The structural equations take the general form:
 
 $$MP_{\text{surp}} = f_0(MN) + \varepsilon_0$$
+
 $$\Delta DR = f_1(MP_{\text{surp}}, RS) + \varepsilon_1$$
+
 $$\Delta ECF = f_2(MP_{\text{surp}}, MN) + \varepsilon_2$$
+
 $$R_{eq} = f_3(\Delta DR, \Delta ECF, RS, MP_{\text{surp}}) + \varepsilon_3$$
 
 Where the $\varepsilon$ terms correspond to random Gaussian noise terms with mean zero.
@@ -115,7 +107,37 @@ with pm.Model() as regime_dgp:
     MN = pm.Normal("MN", 0, 1, shape=N)
     MP_surp = pm.Normal("MP_surp", mu=0.5 * MN, sigma=1.5, shape=N)
     tight = pt.switch(MP_surp > 0, 1.0, 0.0)
-    ...  # structural equations for DR, ECF, R_eq (see notebook)
+
+    # DR channel: regime-dependent slopes
+    a1_t = pm.Normal("a1_tight", 0, 2)
+    a1_e = pm.Normal("a1_ease", 0, 2)
+    a2   = pm.Normal("a2", 0, 2)
+    sigma_dr = pm.HalfNormal("sigma_dr", 2)
+    DR = pm.Normal("DR",
+        mu=(a1_t * tight + a1_e * (1 - tight)) * MP_surp + a2 * RS,
+        sigma=sigma_dr, shape=N)
+
+    # ECF channel: regime-dependent slopes
+    b1_t = pm.Normal("b1_tight", 0, 2)
+    b1_e = pm.Normal("b1_ease", 0, 2)
+    b2   = pm.Normal("b2", 0, 2)
+    sigma_ecf = pm.HalfNormal("sigma_ecf", 2)
+    ECF = pm.Normal("ECF",
+        mu=(b1_t * tight + b1_e * (1 - tight)) * MP_surp + b2 * MN,
+        sigma=sigma_ecf, shape=N)
+
+    # R_eq: explicit latent stress indicator
+    c1 = pm.Normal("c1", 0, 2)
+    c2 = pm.Normal("c2", 0, 2)
+    c3 = pm.Normal("c3", 0, 2)
+    c_stress = pm.Normal("c_stress", 0, 5)
+    p_stress = pm.Beta("p_stress", 2, 10)
+    sigma_req = pm.HalfNormal("sigma_req", 2)
+    stress = pm.Bernoulli("stress", p=p_stress, shape=N)
+    base_mu = c1 * DR + c2 * ECF + c3 * RS
+    R_eq = pm.Normal("R_eq",
+        mu=base_mu + stress * c_stress * pt.abs(MP_surp),
+        sigma=sigma_req, shape=N)
 
 # Fix parameters to ground-truth values and generate data
 true_params = {
