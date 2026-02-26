@@ -43,7 +43,7 @@ graph LR
     RS --> Req
 ```
 
-The Monetary Policy surprise variable measures how much the Federal Reserve's interest rate decision differed from what markets expected beforehand. Bernanke & Kuttner (2005) computed it from Fed Funds futures prices in a narrow window around an FOMC announcement. The idea is simple: if the futures market was pricing a rate of 5.25% and the Fed announced 5.50%, that's a +25 basis point tightening surprise.
+The Monetary Policy surprise variable measures how much the Federal Reserve's interest rate decision differed from what markets expected beforehand. Bernanke & Kuttner (2005) computed it from Fed Funds futures prices in a narrow window around an Federal Open Market Committee (FOMC) announcement. The idea is simple: if the futures market was pricing a rate of 5.25% and the Fed announced 5.50%, that's a +25 basis point tightening surprise.
 
 The Monetary policy surprises have a negative impact on the change in expected cash flows as they represent higher than expected borrowing costs for the economy. The effect of the MP surprises on the change in discount rates is positive, and they negatively affect equity prices.
 
