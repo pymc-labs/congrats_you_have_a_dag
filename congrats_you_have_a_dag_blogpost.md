@@ -84,6 +84,8 @@ The causal graph is agreed upon: it follows directly from Bernanke & Kuttner (20
 
 To make the problem concrete, we generate synthetic data from the regime-switching DGP defined above (the ground truth). Rather than hand-coding a separate numpy function, we express the DGP directly as a PyMC model and use PyMC's generative sampling capabilities to produce the data.
 
+You can find the notebook with the full code [here](https://github.com/pymc-labs/congrats_you_have_a_dag/blob/main/congrats_you_have_a_dag.ipynb).
+
 ### PyMC as a generative engine
 
 A PyMC model is not just an inference tool. It is a fully generative probabilistic program. Every `pm.Model()` defines a joint distribution over all its variables. When you call `sample_prior_predictive()`, PyMC samples parameters from their prior distributions and propagates forward through the structural equations to generate data.
@@ -287,7 +289,7 @@ PyMC bridges this gap: express competing structural hypotheses as probabilistic 
 
 ---
 
-*Full reproducible code: `congrats_you_have_a_dag.ipynb`*
+*Full reproducible code: [`congrats_you_have_a_dag.ipynb`](https://github.com/pymc-labs/congrats_you_have_a_dag/blob/main/congrats_you_have_a_dag.ipynb)*
 
 **References**
 
