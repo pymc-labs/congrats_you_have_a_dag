@@ -4,9 +4,9 @@
 
 ---
 
-Can thousands of casual simulations outperform the most sophisticated algorithms in discovering causal structures? This question is critical: it suggests that financial players capable of running these simulations will hold a structural edge over their competitors. In this post, we explore that debate and take it one step further by asking: once you’ve identified the underlying DAG (Directed Acyclic Graph, or causal diagram), is your job actually done?
+Can thousands of causal simulations outperform the most sophisticated algorithms in discovering causal structures? This question is critical: it suggests that financial players capable of running these simulations will hold a structural edge over their competitors. In this post, we explore that debate and take it one step further by asking: once you’ve identified the underlying DAG (Directed Acyclic Graph, or causal diagram), is your job actually done?
 
-The ADIA Lab [Causal Discovery Challenge](https://www.linkedin.com/posts/milosmaricic_a-quant-fund-with-25000-realistic-causal-activity-7424065123251830784-jJXz?utm_source=share&utm_medium=member_desktop&rcm=ACoAACgJNhwBHD7kjRIofUo3Ml9Vv1XfzxdTtyA) demonstrated that supervised ML can classify causal roles from observational data at ~77% balanced accuracy, nearly double the ~40% achieved by classical constraint-based methods [(Olivetti et al., 2024)]([https://papers.ssrn.com/sol3/papers.cfm?abstract_id=6125566]). In consequence, institutions that can generate thousands of realistic labeled simulations may hold a structural advantage in causal discovery.
+The ADIA Lab [Causal Discovery Challenge](https://www.linkedin.com/posts/milosmaricic_a-quant-fund-with-25000-realistic-causal-activity-7424065123251830784-jJXz?utm_source=share&utm_medium=member_desktop&rcm=ACoAACgJNhwBHD7kjRIofUo3Ml9Vv1XfzxdTtyA) demonstrated that supervised ML can classify causal roles from observational data at ~77% balanced accuracy, nearly double the ~40% achieved by classical constraint-based methods [(Olivetti et al., 2024)](https://papers.ssrn.com/sol3/papers.cfm?abstract_id=6125566). In consequence, institutions that can generate thousands of realistic labeled simulations may hold a structural advantage in causal discovery.
 
 Yet discovering the graph is only one piece of the puzzle. In [*Causal Factor Investing*](https://doi.org/10.1017/9781009397315), López de Prado (2023) argues that virtually all factor investing research stops at associational claims, never testing whether the relationships it reports reflect genuine causal mechanisms. The author makes the case that real economic value begins *after* the DAG is identified — it depends on correctly specifying, and estimating, the structural equations the graph encodes. In this post we put that argument to the test: starting from an uncontroversial DAG, we show how three different functional-form assumptions lead to materially different investment outcomes, and how PyMC lets you identify the right one.
 
@@ -16,7 +16,7 @@ Recovering a DAG is only the first step that paves an exciting road ahead. At Py
 
 To exemplify that identifying a DAG is just a first step that still leaves you far away from making money, we build a simple example in which a known DAG can follow different functional forms. Each functional form generates different results, and choosing the right one can be the edge that separates you from competitors trading the same insight. This is where PyMC can bridge the gap.
 
-We use a well grounded causal example in the literature, by following the causal relation between policy surprises and equity returns [(Bernanke & Kuttner, 2005)](https://onlinelibrary.wiley.com/doi/full/10.1111/j.1540-6261.2005.00760.x?casa_token=1GbELx5Ge38AAAAA%3Ao0EpckXfnkoboK-TGA5hbcNanjfsZk9qAmN9xPglaKXgF52CU9rG9dJ-AXJYAvfHUGmOgnDTrQavhEyC-A). The example shows that knowing the DAG  still leaves open the functional form of those relationships. Is the response linear? Does it switch regimes between tightening and easing cycles? Do effects saturate at extremes?
+We use a well-grounded causal example in the literature, by following the causal relation between policy surprises and equity returns [(Bernanke & Kuttner, 2005)](https://onlinelibrary.wiley.com/doi/full/10.1111/j.1540-6261.2005.00760.x?casa_token=1GbELx5Ge38AAAAA%3Ao0EpckXfnkoboK-TGA5hbcNanjfsZk9qAmN9xPglaKXgF52CU9rG9dJ-AXJYAvfHUGmOgnDTrQavhEyC-A). The example shows that knowing the DAG still leaves open the functional form of those relationships. Is the response linear? Does it switch regimes between tightening and easing cycles? Do effects saturate at extremes?
 
 The answer matters enormously for anyone who wants to trade the insight. **Everyone with the same DAG has the same starting point. The team that nails the functional form extracts materially more alpha. In our example, the correctly-specified regime model outperforms misspecified alternatives by ~10% in the full sample and up to 40% during the most volatile episodes, a compounding edge that grows with every trade**. PyMC identifies the correct one.
 
@@ -30,30 +30,22 @@ We adopt their causal structure precisely because the DAG itself is uncontrovers
 
 The canonical DAG from the monetary policy transmission literature decomposes equity return responses to policy surprises into two channels:
 
-```mermaid
-graph LR
-    MN["Macro news (MN)"] --> MP["MP_surp"]
-    MN --> ECF["ΔECF"]
-    MP --> DR["ΔDR"]
-    MP --> ECF
-    MP --> Req["R_eq"]
-    DR --> Req
-    ECF --> Req
-    RS["Risk sentiment (RS)"] --> DR
-    RS --> Req
-```
+![Standard normal distribution with P(Z>1) ≈ 16% shaded](figures/canonical_dag.png)
 
-The Monetary Policy surprise variable measures how much the Federal Reserve's interest rate decision differed from what markets expected beforehand. Bernanke & Kuttner (2005), computed it from Fed Funds futures prices in a narrow window around an FOMC announcement. The idea is simple: if the futures market was pricing a rate of 5.25% and the Fed announced 5.50%, that's a +25 basis point tightening surprise.
+The Monetary Policy (MP) surprise variable measures how much the Federal Reserve's interest rate decision differed from what markets expected beforehand. Bernanke & Kuttner (2005) computed it from Fed Funds futures prices in a narrow window around an Federal Open Market Committee (FOMC) announcement. The idea is simple: if the futures market was pricing a rate of 5.25% and the Fed announced 5.50%, that's a +25 basis point tightening surprise.
 
-The Monetary policy surprises have a negative impact on the change in expected cash flows as they represent higher than expected borrowing costs for the economy. The effect of the MP surprises on the change in discount rates is positive, and they affect negatively the Equity prices.
+The Monetary policy surprises have a negative impact on the change in expected cash flows as they represent higher than expected borrowing costs for the economy. The effect of the MP surprises on the change in discount rates is positive, and they negatively affect equity prices.
 
 The remaining nodes in the graph are: **Equity return** ($R_{eq}$), the broad stock-market index return on the day of the announcement (the S&P 500's daily move). **Change in discount rates** ($\Delta DR$) captures the shift in risk-free yields (e.g. Treasury rates) that reprices every future cash-flow stream. **Change in expected cash flows** ($\Delta ECF$) summarises the market's revision to its forecast of future corporate earnings: when borrowing costs jump unexpectedly, analysts mark down profit expectations. Finally, **Risk sentiment** ($RS$) is a latent measure of investors' willingness to bear risk; in the original paper it is proxied by credit spreads (the extra yield investors demand for holding riskier corporate bonds over safe government debt; wider spreads signal more fear) or the VIX (the S&P 500 "fear index," which measures expected stock-market volatility), while in our synthetic data it is simply an exogenous standard-normal draw, independent of the policy surprise.
 
 The structural equations take the general form:
 
 $$MP_{\text{surp}} = f_0(MN) + \varepsilon_0$$
+
 $$\Delta DR = f_1(MP_{\text{surp}}, RS) + \varepsilon_1$$
+
 $$\Delta ECF = f_2(MP_{\text{surp}}, MN) + \varepsilon_2$$
+
 $$R_{eq} = f_3(\Delta DR, \Delta ECF, RS, MP_{\text{surp}}) + \varepsilon_3$$
 
 Where the $\varepsilon$ terms correspond to random Gaussian noise terms with mean zero.
@@ -115,7 +107,37 @@ with pm.Model() as regime_dgp:
     MN = pm.Normal("MN", 0, 1, shape=N)
     MP_surp = pm.Normal("MP_surp", mu=0.5 * MN, sigma=1.5, shape=N)
     tight = pt.switch(MP_surp > 0, 1.0, 0.0)
-    ...  # structural equations for DR, ECF, R_eq (see notebook)
+
+    # DR channel: regime-dependent slopes
+    a1_t = pm.Normal("a1_tight", 0, 2)
+    a1_e = pm.Normal("a1_ease", 0, 2)
+    a2   = pm.Normal("a2", 0, 2)
+    sigma_dr = pm.HalfNormal("sigma_dr", 2)
+    DR = pm.Normal("DR",
+        mu=(a1_t * tight + a1_e * (1 - tight)) * MP_surp + a2 * RS,
+        sigma=sigma_dr, shape=N)
+
+    # ECF channel: regime-dependent slopes
+    b1_t = pm.Normal("b1_tight", 0, 2)
+    b1_e = pm.Normal("b1_ease", 0, 2)
+    b2   = pm.Normal("b2", 0, 2)
+    sigma_ecf = pm.HalfNormal("sigma_ecf", 2)
+    ECF = pm.Normal("ECF",
+        mu=(b1_t * tight + b1_e * (1 - tight)) * MP_surp + b2 * MN,
+        sigma=sigma_ecf, shape=N)
+
+    # R_eq: explicit latent stress indicator
+    c1 = pm.Normal("c1", 0, 2)
+    c2 = pm.Normal("c2", 0, 2)
+    c3 = pm.Normal("c3", 0, 2)
+    c_stress = pm.Normal("c_stress", 0, 5)
+    p_stress = pm.Beta("p_stress", 2, 10)
+    sigma_req = pm.HalfNormal("sigma_req", 2)
+    stress = pm.Bernoulli("stress", p=p_stress, shape=N)
+    base_mu = c1 * DR + c2 * ECF + c3 * RS
+    R_eq = pm.Normal("R_eq",
+        mu=base_mu + stress * c_stress * pt.abs(MP_surp),
+        sigma=sigma_req, shape=N)
 
 # Fix parameters to ground-truth values and generate data
 true_params = {
@@ -207,7 +229,7 @@ comparison = az.compare(traces, ic="loo", var_name="R_eq")
 
 ![LOO Model Comparison: Same DAG, Three Functional Forms](figures/fig2_loo_comparison.png)
 
-The result is unambiguous. The Leave-One-Out (LOO) helps us identify the right functional form! Which confirms the strength of Bayesian approach to bridge the gap between having a DAG and actually modeling the real structure of causal relations. The regime-switching model (ELPD ≈ −3 090) is separated from both alternatives (ELPD ≈ −5 140) by **~2 050 log-points, more than 25× the standard error of the difference**. This is not a marginal improvement; the data overwhelmingly prefer the model that respects the empirical asymmetry between tightening and easing. Remarkably, this advantage holds even though the regime model must *discover* the latent stress regime from data rather than being told which observations are stress events.
+The result is unambiguous. The Leave-One-Out (LOO) helps us identify the right functional form, which confirms the strength of the Bayesian approach to bridge the gap between having a DAG and actually modeling the real structure of causal relations. The regime-switching model (ELPD ≈ −3 090) is separated from both alternatives (ELPD ≈ −5 140) by **~2 050 log-points, more than 25× the standard error of the difference**. This is not a marginal improvement; the data overwhelmingly prefer the model that respects the empirical asymmetry between tightening and easing. Remarkably, this advantage holds even though the regime model must *discover* the latent stress regime from data rather than being told which observations are stress events.
 
 ---
 
@@ -219,13 +241,13 @@ LOO tells you which model predicts better. Posterior predictive checks tell you 
 
 All three models reproduce the bulk of the equity return distribution. The cumulative density functions (blue = posterior predictive draws, black = observed) overlap tightly in the center. But the tails diverge.
 
-The Regime switching model's x-axis extends to −40, while the Linear and Nonlinear panels reach about −30. Only the regime-switching specification generates the deep left-tail mass consistent with the stress-amplified drawdowns in the data. The linear model's predictive distribution is systematically too narrow at the left extremes, precisely the events that drive risk and position-sizing decisions.
+The regime-switching model's x-axis extends to −40, while the Linear and Nonlinear panels reach about −30. Only the regime-switching specification generates the deep left-tail mass consistent with the stress-amplified drawdowns in the data. The linear model's predictive distribution is systematically too narrow at the left extremes, precisely the events that drive risk and position-sizing decisions.
 
 ---
 
 ## Right Form, Right DAG, Extra Edge
 
-LOO scores are interesting for stats nerds (like us). However, the real world economic consequence is the return. It results from using the model as the basis for investment decisions.
+LOO scores are interesting for stats nerds (like us). However, the real-world economic consequence is the return. It results from using the model as the basis for investment decisions.
 
 A simple strategy: predict $R_{eq}$ from each model's posterior mean, go long if the prediction is positive, short if negative, and scale position by normalized confidence. We run all three models on the full 2 000 events, then isolate the 309 stress episodes (independent contagion shock, approximately 15% of observations).
 
