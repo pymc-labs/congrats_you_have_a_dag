@@ -5,24 +5,24 @@
     "Linear"
   ],
   "loo_elpd": {
-    "Regime switching": -3153.6344192438137,
-    "Nonlinear": -5058.2445885762645,
-    "Linear": -5086.445738816338
+    "Regime switching": -3089.586783908355,
+    "Nonlinear": -5131.260823863609,
+    "Linear": -5148.049442624189
   },
   "loo_se": {
-    "Regime switching": 39.15513927452418,
-    "Nonlinear": 79.31405427013026,
-    "Linear": 82.2355937049425
+    "Regime switching": 38.733816067906666,
+    "Nonlinear": 77.92544662987962,
+    "Linear": 79.85604757956615
   },
   "stress_pnl": {
-    "Linear": 7.329508871314024,
-    "Regime switching": 10.219636236874834,
-    "Nonlinear": 8.113012591160851
+    "Linear": 7.311566193162764,
+    "Regime switching": 10.057494406031019,
+    "Nonlinear": 7.8358967575173555
   },
   "final_cum_pnl": {
-    "Linear": 21.973083065112544,
-    "Regime switching": 24.163875789726692,
-    "Nonlinear": 21.802803314858416
+    "Linear": 21.050938124293634,
+    "Regime switching": 23.221565199874338,
+    "Nonlinear": 20.883396537145448
   },
   "n_obs": 2000,
   "n_stress": 309
