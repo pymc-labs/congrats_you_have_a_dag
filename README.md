@@ -9,5 +9,6 @@ This project responds to the [ADIA Lab Causal Discovery Challenge](https://hub.c
 **The key insight:** Discovering that A causes B doesn't tell you *how* A causes B. The functional form matters enormously for predictions and decisions.
 
 ## Authors
-
+Camilo Saldarriega, Francesco Muia, Alexander Fengler, Ben Vincent
 PyMC Labs
+
